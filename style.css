@@ -1276,6 +1276,33 @@ body {
   margin: 10px 0 4px;
 }
 
+/* ── Fill-in-the-blank ── */
+.fill-blank-card { padding: 20px 20px 16px; }
+.fill-blank-sentence {
+  font-size: 20px;
+  font-weight: 600;
+  color: #2d3436;
+  line-height: 1.6;
+  text-align: center;
+  margin-top: 8px;
+}
+.fill-blank-gap {
+  display: inline-block;
+  min-width: 80px;
+  border-bottom: 3px solid var(--purple);
+  color: var(--purple);
+  font-weight: 800;
+  letter-spacing: 2px;
+  text-align: center;
+  padding: 0 4px;
+}
+.fb-sentence-filled {
+  font-size: 14px;
+  margin-top: 8px;
+  font-style: italic;
+  color: #636e72;
+}
+
 /* Responsiveness */
 @media (max-width: 480px) {
   .choices { grid-template-columns: 1fr; }

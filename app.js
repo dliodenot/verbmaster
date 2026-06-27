@@ -198,6 +198,176 @@ const VERBS = [
   { id: 150, level: 15, inf: 'sow',       v2: 'sowed',      v3: 'sown',      fr: 'semer' },
 ];
 
+// 3 sentence complements per verb – used to build fill-in-the-blank sentences.
+// Subjects: index 0 → "I", index 1 → "She", index 2 → "He"
+const VERB_COMPS = {
+  // Level 1
+  1:  ['very happy last night', 'at home all day', 'tired after school'],
+  2:  ['a lot of fun', 'a great idea', 'lunch with the family'],
+  3:  ['my homework quickly', 'the dishes after dinner', 'his best in the exam'],
+  4:  ['to the park with friends', 'home early', 'to school by bike'],
+  5:  ['home very late', 'to the party with us', 'back with great news'],
+  6:  ['a great movie', 'her old friend at the market', 'something incredible'],
+  7:  ['a birthday present', 'really tired', 'a perfect score'],
+  8:  ['her a wonderful gift', 'a long speech', 'some good advice'],
+  9:  ['the bus to school', 'a beautiful photo', 'the last book on the shelf'],
+  10: ['the right answer', 'his name immediately', 'the whole truth'],
+  // Level 2
+  11: ['hello to everyone', 'the truth out loud', 'something funny'],
+  12: ['a big mistake', 'her lunch herself', 'some new friends at school'],
+  13: ['about the problem all day', 'it was very funny', 'of a good solution'],
+  14: ['my lost keys', 'the answer easily', 'a great hiding spot'],
+  15: ['her a big secret', 'the whole story', 'everyone the exciting news'],
+  16: ['very famous overnight', 'a great teacher', 'best friends'],
+  17: ['the house at 7am', 'her bag at school again', 'the party early'],
+  18: ['the book on the table', 'her coat on the chair', 'the plates in the cupboard'],
+  19: ['a delicious cake to share', 'her dog to the park', 'some great news'],
+  20: ['a long letter to my friend', 'her name on the board', 'a short story'],
+  // Level 3
+  21: ['a new bike for Christmas', 'some chocolate at the shop', 'a birthday gift'],
+  22: ['the ball perfectly', 'a bad cold', 'the last train home'],
+  23: ['a huge pizza', 'all her vegetables', 'at the new restaurant'],
+  24: ['off my bike in the park', 'asleep during the film', 'into the cold water'],
+  25: ['really happy about the result', 'a bit sick in the morning', 'very proud'],
+  26: ['a very loud noise outside', 'some great news', 'his favourite song on the radio'],
+  27: ['a diary for one year', 'her promise to her friend', 'all the old photos'],
+  28: ['an old friend by accident', 'someone very interesting', 'his new teacher'],
+  29: ['very fast to win the race', 'to the station', 'five kilometres without stopping'],
+  30: ['a message to my mum', 'some beautiful flowers', 'an important email'],
+  // Level 4
+  31: ['a world record', 'her phone by accident', 'the classroom window'],
+  32: ['the red one in the end', 'a completely different path', 'the best answer'],
+  33: ['to the beach for the day', 'very carefully in the rain', 'all night to get there'],
+  34: ['to Paris for the weekend', 'over the mountains', 'for the very first time'],
+  35: ['my password again', 'to bring her keys', 'everything he had learned'],
+  36: ['very tall that summer', 'tomatoes in the garden', 'so fast it was amazing'],
+  37: ['under the bed', 'the present very carefully', 'behind the big tree'],
+  38: ['the whole book in one day', 'a great adventure story', 'every page carefully'],
+  39: ['in English to the class', 'very slowly and clearly', 'to the headteacher'],
+  40: ['across the lake in record time', 'very fast', 'for one hour without stopping'],
+  // Level 5
+  41: ['a brand new chapter', 'to understand the lesson', 'working hard every day'],
+  42: ['into the juicy apple', 'her lip nervously', 'the cookie in one go'],
+  43: ['out all the candles in one breath', 'very hard into the microphone', 'a huge bubble'],
+  44: ['a beautiful picture of the sea', 'her portrait from memory', 'a detailed map'],
+  45: ['a big glass of cold water', 'hot chocolate by the fire', 'too much juice'],
+  46: ['my new bike around the block', 'a horse for the very first time', 'to school every morning'],
+  47: ['the doorbell twice', 'her friend after school', 'at midnight and woke everyone up'],
+  48: ['a beautiful song for the audience', 'very loudly in the shower', 'on stage for the first time'],
+  49: ['the ball from the defender', 'a cookie from the jar', 'first place in the race'],
+  50: ['the ball far across the field', 'her coat on the chair', 'a perfect pass to his teammate'],
+  // Level 6
+  51: ['the other team by three goals', 'her personal best record', 'everyone at the board game'],
+  52: ['the metal bar in half', 'her knees to stretch before running', 'the rules just a little'],
+  53: ['a giant sandcastle on the beach', 'a birdhouse with her dad', 'a robot from cardboard boxes'],
+  54: ['the toast again', 'her hand on the hot stove', 'all the old letters in the fireplace'],
+  55: ['the bread into thick slices', 'her finger by accident', 'the rope with scissors'],
+  56: ['with the problem calmly', 'the cards to everyone at the table', 'with a difficult customer'],
+  57: ['a deep hole in the sand', 'in the garden all afternoon', 'for buried treasure'],
+  58: ['the ducks at the pond', 'her baby brother his dinner', 'the animals at the zoo'],
+  59: ['for my right to be heard', 'against injustice at school', 'very bravely to the end'],
+  60: ['the painting on the living room wall', 'her coat on the hook by the door', 'the decorations for the party'],
+  // Level 7
+  61: ['the door open for everyone', 'her little sister\'s hand tightly', 'the world record for three years'],
+  62: ['my ankle badly during the match', 'her feelings without meaning to', 'nobody in the end'],
+  63: ['the table carefully for dinner', 'the baby down gently in the cot', 'all the cards on the table'],
+  64: ['the team to a great victory', 'the way through the dark forest', 'a double life for years'],
+  65: ['her my favourite pencil', 'her bike to a friend for the day', 'some money to help out'],
+  66: ['the dog out into the garden', 'her stay up late on Friday', 'everyone down in the end'],
+  67: ['on the grass and looked at the clouds', 'on her bed all afternoon', 'under the stars all night'],
+  68: ['the game in the last minute', 'her keys again', 'the race by just one second'],
+  69: ['every single word', 'something very important by that', 'well but still failed'],
+  70: ['for the cinema tickets', 'close attention in class', 'a very high price in the end'],
+  // Level 8
+  71: ['early that morning to see the sunrise', 'above the horizon slowly', 'to meet the challenge'],
+  72: ['the table for eight people', 'a new world record in the final', 'his alarm for 7 in the morning'],
+  73: ['his hand very firmly', 'the bottle well before opening it', 'with cold in the wind'],
+  74: ['a torch into the dark cave', 'on the stage during the show', 'like a true star'],
+  75: ['next to her best friend in class', 'in the very front row', 'quietly for hours without moving'],
+  76: ['for ten hours straight', 'right through the alarm', 'like a baby all night'],
+  77: ['down the snowy hill on a tray', 'on the ice across the lake', 'under the fence carefully'],
+  78: ['the whole day at the beach', 'all her pocket money at once', 'a week in London with his class'],
+  79: ['butter on the toast', 'the news very quickly', 'a blanket on the grass for the picnic'],
+  80: ['on top of the hill and looked around', 'in a long queue for hours', 'up for his friend bravely'],
+  // Level 9
+  81: ['the ball perfectly into the top corner', 'a great deal with the seller', 'the clock at exactly midnight'],
+  82: ['the kitchen floor after dinner', 'all the leaves from the path', 'her completely off her feet'],
+  83: ['happily on the swings in the park', 'the bat but missed the ball', 'back and forth on the hammock'],
+  84: ['English to young students abroad', 'herself to play the guitar', 'the whole class something new'],
+  85: ['the paper carefully in half', 'her favourite dress on the fence', 'open the envelope impatiently'],
+  86: ['the lesson straight away', 'exactly what he meant', 'everything about the situation'],
+  87: ['up very early to catch the train', 'her little sister gently', 'at the sound of thunder'],
+  88: ['a warm coat to school', 'her favourite dress to the party', 'his school uniform proudly'],
+  89: ['when I heard the sad news', 'with joy at the end of the film', 'all night long'],
+  90: ['the national competition', 'the gold medal at the championships', 'against a much stronger team'],
+  // Level 10
+  91: ['a long shadow across the field', 'her vote in the election', 'serious doubt on the result'],
+  92: ['anyone from entering the room', 'her children to watch TV after 9pm', 'the use of phones in class'],
+  93: ['solid overnight in the cold spell', 'on the spot when she saw the spider', 'the leftover soup for later'],
+  94: ['over the big puddle easily', 'with joy when she heard the news', 'as high as he possibly could'],
+  95: ['a few quiet tears', 'light on the mystery', 'tears of joy'],
+  96: ['the ball straight into the net', 'a perfect score at the competition', 'a beautiful short film'],
+  97: ['us the quickest way there', 'great courage in a difficult moment', 'his new drawings to the class'],
+  98: ['the bill equally between them', 'into two groups for the activity', 'the difference fairly'],
+  99: ['the old clock carefully every morning', 'the scarf around her neck', 'up the toy for his brother'],
+  100: ['some money from the bank', 'from the competition at the last minute', 'his application after all'],
+  // Level 11
+  101: ['from my seat to speak', 'early and prepared breakfast', 'at just the right moment'],
+  102: ['the pain very bravely', 'the weight of the heavy bag', 'good news from afar'],
+  103: ['the books together with string', 'the wound carefully with a bandage', 'them together with a rope'],
+  104: ['champion horses on the farm', 'rabbits as a hobby', 'a spirit of loyalty in his team'],
+  105: ['into the room suddenly', 'out laughing at the joke', 'with pride at her success'],
+  106: ['into the room so as not to wake anyone', 'slowly along the wall', 'up quietly behind her'],
+  107: ['of flying over the mountains', 'about her future every night', 'of a much better world'],
+  108: ['the country in fear for my life', 'the burning building in time', 'as fast as he possibly could'],
+  109: ['the door wide open', 'her arms around him happily', 'the ball far across the field'],
+  110: ['on the soft damp grass', 'before the queen to receive the honour', 'to tie his shoelace'],
+  // Level 12
+  111: ['against the wall to catch my breath', 'out of the window to look', 'on his best friend for support'],
+  112: ['the candles on the birthday cake', 'a small fire in the garden', 'the whole room with fairy lights'],
+  113: ['my fear of heights at last', 'every single obstacle in her way', 'the challenge completely alone'],
+  114: ['my point very clearly', 'everyone wrong in the end', 'his innocence at last'],
+  115: ['a better life in a new country', 'the truth about her past', 'shelter from the heavy rain'],
+  116: ['the beautiful fresh flowers', 'something burning in the kitchen', 'absolutely amazing'],
+  117: ['down the empty highway', 'past everyone else on the track', 'through the exam in record time'],
+  118: ['juice all over the clean tablecloth', 'the beans completely by accident', 'his drink all over the table'],
+  119: ['the ending of the film for everyone', 'the big surprise her family had planned', 'his little sister terribly'],
+  120: ['straight into action', 'over the fence in one jump', 'a total surprise on all his friends'],
+  // Level 13
+  121: ['the poster firmly on the wall', 'to her decision no matter what', 'out of the crowd immediately'],
+  122: ['him painfully on the arm', 'her hand as she reached into the bush', 'really badly and made her cry'],
+  123: ['of old fish all day', 'up the whole kitchen terribly', 'so badly that everyone left the room'],
+  124: ['confidently onto the stage', 'across the muddy field', 'into the room and took control'],
+  125: ['the fairy lights along the wall', 'her guitar perfectly before the show', 'the colourful beads together'],
+  126: ['to tell the whole truth', 'she would never ever give up', 'an oath of loyalty to the team'],
+  127: ['with pride when I heard my name', 'up badly after the bee sting', 'with pride after the victory'],
+  128: ['carefully on the icy pavement', 'on a sharp stone with bare feet', 'softly so as not to wake the baby'],
+  129: ['the whole team with my words', 'her stomach badly', 'the balance of power completely'],
+  130: ['a beautiful and colourful carpet', 'her way skillfully through the crowd', 'a basket from river reeds'],
+  // Level 14
+  131: ['everything on the last race', 'that she would definitely win', 'on completely the wrong horse'],
+  132: ['on the rare painting at the auction', 'a fond farewell to all her friends', 'the highest price of all'],
+  133: ['perfectly into the small box', 'all her clothes into one tiny bag', 'into the new team instantly'],
+  134: ['the fresh coffee beans', 'her teeth in her sleep', 'the metal down to a fine powder'],
+  135: ['a warm scarf for the cold winter', 'him a pair of thick woollen socks', 'by the fire all evening'],
+  136: ['him for someone else entirely', 'the salt for sugar in the recipe', 'the path in the dark forest'],
+  137: ['my job to travel the world', 'the team after the big argument', 'school and started his own business'],
+  138: ['myself of all distractions to focus', 'the house of mice at last', 'his life of all negativity'],
+  139: ['in the very hot wash', 'back in fear from the loud noise', 'to less than half its original size'],
+  140: ['every single word correctly', 'her unusual name on the board slowly', 'the long word out loud'],
+  // Level 15
+  141: ['around quickly on the dance floor', 'the wheel as fast as she could', 'in endless circles'],
+  142: ['out the bitter medicine immediately', 'watermelon seeds across the garden', 'in anger at the unfair result'],
+  143: ['to do my absolute best every day', 'for excellence in everything she did', 'to make a real difference'],
+  144: ['a very dangerous mission alone', 'the huge project entirely on her own', 'a long and difficult journey'],
+  145: ['the pressure of the final exam', 'the freezing cold winter', 'every challenge thrown at him'],
+  146: ['all my old bad habits at once', 'her old friends for money and fame', 'the busy city for a quiet life'],
+  147: ['major and unexpected changes', 'a very difficult test of her strength', 'surgery and made a full recovery'],
+  148: ['the soaking wet towel completely dry', 'her hands nervously while waiting', 'every last drop of water out'],
+  149: ['everyone with false information', 'the investigators completely', 'the whole class by mistake'],
+  150: ['seeds carefully in the vegetable garden', 'doubt in the minds of the jury', 'wild oats in his youth'],
+};
+
 const QUESTIONS_PER_QUIZ = 12;
 
 const MESSAGES_CORRECT = [
@@ -289,7 +459,32 @@ const Q_TYPES = {
   V3_QCM:          'V3_QCM',          // "Quel est le participe passé de X ?"
   TYPE_V2:         'TYPE_V2',         // Écrire le prétérit
   TYPE_V3:         'TYPE_V3',         // Écrire le participe passé
+  FILL_BLANK:      'FILL_BLANK',      // Phrase à trou – choisir le prétérit
 };
+
+// Returns the first (singular) form of v2, e.g. "was / were" → "was"
+function sentV2(verb) { return verb.v2.split('/')[0].trim(); }
+
+// Returns 1 random sentence object from a verb's 3 complements
+function randomVerbSentence(verb) {
+  const comps = VERB_COMPS[verb.id];
+  if (!comps) return null;
+  const subs = ['I', 'She', 'He'];
+  const i    = Math.floor(Math.random() * comps.length);
+  return { full: `${subs[i]} ___ ${comps[i]}.`, correct: sentV2(verb), verb };
+}
+
+// Builds a FILL_BLANK quiz question for use in daily quiz
+function buildFillBlankQ(verb, allVerbs) {
+  const sent = randomVerbSentence(verb);
+  if (!sent) return null;
+  const correct     = sent.correct;
+  const distractors = pickRandom(
+    allVerbs.filter(v => v.id !== verb.id && sentV2(v) !== correct), 3
+  ).map(v => sentV2(v));
+  const choices = [correct, ...distractors].sort(() => Math.random() - .5);
+  return { type: Q_TYPES.FILL_BLANK, verb, text: sent.full, correct, choices, question: '', highlight: '' };
+}
 
 function pickRandom(arr, n, exclude = []) {
   const pool = arr.filter(x => !exclude.includes(x));
@@ -565,11 +760,16 @@ function renderLevelMenu(levelId) {
           <div class="mode-desc">${QUESTIONS_PER_QUIZ} questions – gagne des étoiles !</div>
         </div>
       </div>
-      <div class="mode-card mode-card-wide mt-16" onclick="startMatching(${levelId})">
-        <div class="mode-icon">🔗</div>
-        <div class="mode-name">Relier les mots</div>
-        <div class="mode-desc">
-          Relie ~${Math.min(20, levelId * 10)} verbes à leur traduction en cliquant sur les paires
+      <div class="mode-choice mt-16">
+        <div class="mode-card" onclick="startMatching(${levelId})">
+          <div class="mode-icon">🔗</div>
+          <div class="mode-name">Relier les mots</div>
+          <div class="mode-desc">Relie les verbes à leur traduction</div>
+        </div>
+        <div class="mode-card" onclick="startFillBlank(${levelId})">
+          <div class="mode-icon">✍️</div>
+          <div class="mode-name">Texte à trou</div>
+          <div class="mode-desc">Choisis le bon verbe dans la phrase</div>
         </div>
       </div>
 
@@ -735,7 +935,32 @@ function renderQuizQuestion() {
     [Q_TYPES.V3_QCM]:       '📝 Participe passé',
     [Q_TYPES.TYPE_V2]:      '✏️ Écris le prétérit',
     [Q_TYPES.TYPE_V3]:      '✏️ Écris le participe passé',
+    [Q_TYPES.FILL_BLANK]:   '✍️ Texte à trou',
   }[q.type];
+
+  // FILL_BLANK in daily quiz: choice buttons + sentence display
+  if (q.type === Q_TYPES.FILL_BLANK) {
+    const letters = ['A', 'B', 'C', 'D'];
+    questionBody = `
+      <div class="choices">
+        ${q.choices.map((c, i) => `
+          <button class="choice-btn" onclick="handleChoice(this, '${escapeQuote(c)}')" data-val="${escapeAttr(c)}">
+            <span class="choice-letter">${letters[i]}</span>${c}
+          </button>`).join('')}
+      </div>`;
+  }
+
+  const questionCard = q.type === Q_TYPES.FILL_BLANK
+    ? `<div class="question-card fill-blank-card">
+         <div class="question-type-label">${typeLabel}</div>
+         <div class="fill-blank-sentence">${q.text.replace('___', '<span class="fill-blank-gap">___</span>')}</div>
+       </div>`
+    : `<div class="question-card">
+         <div class="question-type-label">${typeLabel}</div>
+         <div class="question-text">
+           ${q.question} <span style="color:var(--purple)">${q.highlight}</span> ?
+         </div>
+       </div>`;
 
   const isDaily = state.mode === 'daily';
   const headerTitle = isDaily ? '⚡ Défi du jour' : `Niveau ${state.levelId} – S'entraîner`;
@@ -765,12 +990,7 @@ function renderQuizQuestion() {
         </div>
       </div>
 
-      <div class="question-card">
-        <div class="question-type-label">${typeLabel}</div>
-        <div class="question-text">
-          ${q.question} <span style="color:var(--purple)">${q.highlight}</span> ?
-        </div>
-      </div>
+      ${questionCard}
 
       ${questionBody}
 
@@ -975,16 +1195,16 @@ function getDailyType() {
 function _dailyTypeWeights() {
   const t = getDailyType();
   if (t === 1) return [
-    { type: Q_TYPES.TYPE_V2, w: 4 }, { type: Q_TYPES.V2_QCM, w: 4 },
-    { type: Q_TYPES.TRANSL_FR_EN, w: 1 },
+    { type: Q_TYPES.TYPE_V2,    w: 3 }, { type: Q_TYPES.V2_QCM,      w: 3 },
+    { type: Q_TYPES.FILL_BLANK, w: 3 }, { type: Q_TYPES.TRANSL_FR_EN, w: 1 },
   ];
   if (t === 2) return [
-    { type: Q_TYPES.TYPE_V3, w: 4 }, { type: Q_TYPES.V3_QCM, w: 4 },
+    { type: Q_TYPES.TYPE_V3,    w: 4 }, { type: Q_TYPES.V3_QCM,      w: 4 },
     { type: Q_TYPES.TRANSL_FR_EN, w: 1 },
   ];
   return [
     { type: Q_TYPES.TRANSL_FR_EN, w: 3 }, { type: Q_TYPES.TRANSL_EN_FR, w: 3 },
-    { type: Q_TYPES.V2_QCM, w: 1 }, { type: Q_TYPES.V3_QCM, w: 1 },
+    { type: Q_TYPES.FILL_BLANK,   w: 2 }, { type: Q_TYPES.V2_QCM,       w: 1 },
   ];
 }
 
@@ -1016,6 +1236,14 @@ function generateDailyQuiz() {
       return { ...q, choices, correct, question: 'Quel est le participe passé de', highlight: verb.inf };
     } else if (qtype === Q_TYPES.TYPE_V2) {
       return { ...q, correct: verb.v2, question: 'Écris le prétérit de', highlight: verb.inf };
+    } else if (qtype === Q_TYPES.TYPE_V3) {
+      return { ...q, correct: verb.v3, question: 'Écris le participe passé de', highlight: verb.inf };
+    } else if (qtype === Q_TYPES.FILL_BLANK) {
+      const fq = buildFillBlankQ(verb, allVerbs);
+      if (fq) return fq;
+      // fallback if verb has no comps
+      const { choices, correct } = buildChoices(verb, 'v2', allVerbs);
+      return { ...q, type: Q_TYPES.V2_QCM, choices, correct, question: 'Quel est le prétérit de', highlight: verb.inf };
     } else {
       return { ...q, correct: verb.v3, question: 'Écris le participe passé de', highlight: verb.inf };
     }
@@ -1156,6 +1384,181 @@ function showDailyResults() {
         <div class="results-btns">
           <button class="btn btn-secondary" onclick="renderHome()">🏠 Accueil</button>
           <button class="btn btn-secondary" onclick="renderStatsScreen()">📊 Mes stats</button>
+        </div>
+      </div>
+    </div>`;
+}
+
+/* ══════════════════════════════════════════
+   FILL-IN-THE-BLANK EXERCISE (standalone)
+══════════════════════════════════════════ */
+const FILL_BLANK_COUNT = 10;
+
+function startFillBlank(levelId) {
+  const verbs    = shuffleArr(VERBS.filter(v => v.level === levelId && VERB_COMPS[v.id]));
+  const allSents = verbs.flatMap(v => {
+    const comps = VERB_COMPS[v.id];
+    const subs  = ['I', 'She', 'He'];
+    const v2    = sentV2(v);
+    return comps.map((c, i) => ({ full: `${subs[i]} ___ ${c}.`, correct: v2, verb: v }));
+  });
+  const selected = shuffleArr(allSents).slice(0, FILL_BLANK_COUNT);
+
+  state.mode    = 'fillblank';
+  state.levelId = levelId;
+  state.fillBlank = {
+    levelId,
+    sentences: selected.map(s => {
+      const distractors = pickRandom(
+        VERBS.filter(v => v.id !== s.verb.id && sentV2(v) !== s.correct), 3
+      ).map(v => sentV2(v));
+      return { ...s, choices: [s.correct, ...distractors].sort(() => Math.random() - .5), answered: false };
+    }),
+    currentIndex: 0,
+    correctCount: 0,
+    streak: 0,
+    maxStreak: 0,
+    xpEarned: 0,
+  };
+  renderFillBlank();
+}
+
+function renderFillBlank() {
+  const fb   = state.fillBlank;
+  const sent = fb.sentences[fb.currentIndex];
+  const pct  = Math.round((fb.currentIndex / fb.sentences.length) * 100);
+  const letters  = ['A', 'B', 'C', 'D'];
+  const streakHTML = fb.streak >= 2 ? `<span class="streak-badge">🔥 ${fb.streak}</span>` : '';
+  const sentHTML = sent.full.replace('___', '<span class="fill-blank-gap">___</span>');
+
+  app().innerHTML = `
+    ${renderHeader(`Niveau ${state.levelId} – Texte à trou`)}
+    <div class="screen-container">
+      <button class="back-btn" onclick="renderLevelMenu(${state.levelId})">← Retour</button>
+
+      <div class="quiz-header">
+        <div class="quiz-progress-bar">
+          <div class="quiz-progress-fill" style="width:${pct}%"></div>
+        </div>
+        <div class="quiz-meta">
+          <span class="quiz-question-num">Phrase ${fb.currentIndex + 1} / ${fb.sentences.length}</span>
+          <span class="quiz-score-live">✅ ${fb.correctCount} correctes ${streakHTML}</span>
+        </div>
+      </div>
+
+      <div class="question-card fill-blank-card">
+        <div class="question-type-label">✍️ Complète la phrase</div>
+        <div class="fill-blank-sentence">${sentHTML}</div>
+      </div>
+
+      <div class="choices">
+        ${sent.choices.map((c, i) => `
+          <button class="choice-btn" onclick="handleFillBlank(this,'${escapeQuote(c)}')" data-val="${escapeAttr(c)}">
+            <span class="choice-letter">${letters[i]}</span>${c}
+          </button>`).join('')}
+      </div>
+
+      <div id="feedbackArea"></div>
+      <div id="nextArea"></div>
+    </div>`;
+}
+
+function handleFillBlank(btn, value) {
+  const fb   = state.fillBlank;
+  const sent = fb.sentences[fb.currentIndex];
+  if (sent.answered) return;
+  sent.answered = true;
+
+  const isRight = value.toLowerCase().trim() === sent.correct.toLowerCase().trim();
+
+  document.querySelectorAll('.choice-btn').forEach(b => {
+    b.disabled = true;
+    if (b.dataset.val === sent.correct) b.classList.add('correct');
+  });
+  if (!isRight) btn.classList.add('wrong');
+
+  if (isRight) {
+    fb.correctCount++;
+    fb.streak++;
+    fb.maxStreak = Math.max(fb.maxStreak, fb.streak);
+    const xp = 10 + (fb.streak >= 3 ? 5 : 0);
+    fb.xpEarned += xp;
+    addXP(xp);
+    updateMastery(sent.verb.id, true);
+  } else {
+    fb.streak = 0;
+    updateMastery(sent.verb.id, false);
+  }
+
+  const msg      = isRight ? pick(MESSAGES_CORRECT) : pick(MESSAGES_WRONG);
+  const isLast   = fb.currentIndex === fb.sentences.length - 1;
+  const filledHTML = sent.full.replace('___',
+    `<strong style="color:${isRight ? 'var(--green)' : 'var(--red)'}">${isRight ? value : value}</strong>`);
+
+  document.getElementById('feedbackArea').innerHTML = `
+    <div class="feedback-bar ${isRight ? 'correct' : 'wrong'} mt-16">
+      <span class="fb-icon">${isRight ? '🎉' : '😬'}</span>
+      <div>
+        <div>${msg}</div>
+        ${!isRight ? `<div class="fb-answer">Bonne réponse : <strong>${sent.correct}</strong></div>` : ''}
+        <div class="fb-sentence-filled">${filledHTML}</div>
+      </div>
+    </div>`;
+
+  document.getElementById('nextArea').innerHTML = `
+    <button class="next-btn mt-8" onclick="${isLast ? 'showFillBlankResults()' : 'nextFillBlank()'}">
+      ${isLast ? 'Voir mon score 🏆' : 'Phrase suivante →'}
+    </button>`;
+}
+
+function nextFillBlank() {
+  state.fillBlank.currentIndex++;
+  renderFillBlank();
+}
+
+function showFillBlankResults() {
+  const fb    = state.fillBlank;
+  const total = fb.sentences.length;
+  const pct   = Math.round((fb.correctCount / total) * 100);
+
+  recordActivity(fb.xpEarned);
+  state.mode = null;
+
+  const emoji = pct >= 90 ? '🏆' : pct >= 65 ? '🎉' : pct >= 40 ? '👍' : '💪';
+  const title = pct >= 90 ? 'Parfait !' : pct >= 65 ? 'Bien joué !' : pct >= 40 ? 'Pas mal !' : 'Continue !';
+
+  app().innerHTML = `
+    ${renderHeader('Texte à trou – Résultats')}
+    <div class="screen-container">
+      <div class="results-card">
+        <div class="results-emoji">${emoji}</div>
+        <div class="results-title">${title}</div>
+        <div class="results-score-big">${pct}%</div>
+        <div class="results-score-label">${fb.correctCount} / ${total} phrases correctes</div>
+
+        <div class="results-breakdown">
+          <div class="breakdown-row">
+            <span class="breakdown-label">Bonnes réponses</span>
+            <span class="breakdown-value" style="color:var(--green)">✅ ${fb.correctCount}</span>
+          </div>
+          <div class="breakdown-row">
+            <span class="breakdown-label">Erreurs</span>
+            <span class="breakdown-value" style="color:var(--red)">❌ ${total - fb.correctCount}</span>
+          </div>
+          <div class="breakdown-row">
+            <span class="breakdown-label">Meilleure série</span>
+            <span class="breakdown-value">🔥 ${fb.maxStreak}</span>
+          </div>
+          <div class="breakdown-row">
+            <span class="breakdown-label">XP gagnés</span>
+            <span class="breakdown-value" style="color:var(--purple)">⭐ +${fb.xpEarned}</span>
+          </div>
+        </div>
+
+        <div class="results-btns">
+          <button class="btn btn-primary" onclick="startFillBlank(${fb.levelId})">🔄 Réessayer</button>
+          <button class="btn btn-secondary" onclick="renderLevelMenu(${fb.levelId})">← Niveau ${fb.levelId}</button>
+          <button class="btn btn-secondary" onclick="renderHome()">🏠 Accueil</button>
         </div>
       </div>
     </div>`;
