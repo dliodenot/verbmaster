@@ -1777,11 +1777,14 @@ function showSprintResults() {
   sp.finished = true;
   clearInterval(sp.interval);
   state.mode = null;
-  recordActivity(sp.xpEarned);
 
   if (!state.save.sprintBest) state.save.sprintBest = {};
-  const _prevBest = state.save.sprintBest[sp.levelId] || { score: 0, streak: 0 };
-  const _newBest  = { score: Math.max(_prevBest.score, sp.correctCount), streak: Math.max(_prevBest.streak, sp.maxStreak) };
+  const _prevBest    = state.save.sprintBest[sp.levelId] || { score: 0, streak: 0 };
+  const _isNewRecord = sp.correctCount > _prevBest.score;
+  sp.xpEarned = _isNewRecord ? sp.correctCount : 0;
+  recordActivity(sp.xpEarned);
+
+  const _newBest = { score: Math.max(_prevBest.score, sp.correctCount), streak: Math.max(_prevBest.streak, sp.maxStreak) };
   if (_newBest.score !== _prevBest.score || _newBest.streak !== _prevBest.streak) {
     state.save.sprintBest[sp.levelId] = _newBest;
     saveState();
@@ -1822,11 +1825,15 @@ function showSprintResults() {
         </div>
 
         <div class="results-breakdown" style="margin-top:8px">
-          <div class="breakdown-row" style="font-weight:700;color:var(--purple)">
-            <span>XP gagné</span><span>+${sp.xpEarned}</span>
-          </div>
+          ${_isNewRecord
+            ? `<div class="breakdown-row" style="font-weight:700;color:var(--purple)">
+                <span>🏅 Nouveau record !</span><span>+${sp.xpEarned} XP</span>
+               </div>`
+            : `<div class="breakdown-row" style="font-size:13px;color:var(--muted)">
+                <span>Pas de nouveau record – 0 XP</span><span>Record : ${_prevBest.score} bonnes</span>
+               </div>`}
           <div class="breakdown-row" style="font-size:12px;color:var(--muted)">
-            <span>série 1-4 = 5 XP · 5-9 = 8 XP · 10-14 = 12 XP · 15+ = 15 XP</span>
+            <span>XP = nombre de bonnes réponses, seulement si record battu</span>
           </div>
         </div>
 
