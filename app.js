@@ -276,7 +276,7 @@ function isLevelUnlocked(levelId) {
 }
 
 function getTotalMastered() {
-  return VERBS.filter(v => getMastery(v.id) >= 3).length;
+  return VERBS.filter(v => getMastery(v.id) >= 4).length;
 }
 
 /* ══════════════════════════════════════════
@@ -311,7 +311,7 @@ function generateQuiz(levelId) {
   const levelVerbs = VERBS.filter(v => v.level === levelId);
   // also pull a few from previous levels for review
   const reviewVerbs = levelId > 1
-    ? VERBS.filter(v => v.level < levelId && getMastery(v.id) < 4).slice(0, 5)
+    ? VERBS.filter(v => v.level < levelId && getMastery(v.id) < 5).slice(0, 5)
     : [];
   const pool = [...levelVerbs, ...reviewVerbs];
   const allVerbs = VERBS;
@@ -1155,13 +1155,13 @@ function renderStatsScreen() {
       const lv = LEVELS.find(l => l.id === v.level);
       return lv && lv.chapter === ch.id;
     });
-    const chMastered = chVerbs.filter(v => getMastery(v.id) >= 3).length;
+    const chMastered = chVerbs.filter(v => getMastery(v.id) >= 4).length;
     const chPct = Math.round((chMastered / chVerbs.length) * 100);
 
     const levelsHTML = LEVELS.filter(lv => lv.chapter === ch.id).map(lv => {
       const verbs      = VERBS.filter(v => v.level === lv.id);
       const stars      = getStars(lv.id);
-      const masteredLv = verbs.filter(v => getMastery(v.id) >= 3).length;
+      const masteredLv = verbs.filter(v => getMastery(v.id) >= 4).length;
       const unlocked   = !chLocked && isLevelUnlocked(lv.id);
       const pct        = Math.round((masteredLv / verbs.length) * 100);
       return `
