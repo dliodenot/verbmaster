@@ -1269,9 +1269,6 @@ function _renderLoginScreen() {
         <p class="screen-subtitle">Retrouve tes étoiles et ton XP sur tous tes appareils.</p>
 
         <div class="social-btns">
-          <button class="btn-apple" onclick="handleAppleLogin()">
-            ${APPLE_SVG} Continuer avec Apple
-          </button>
           <button class="btn-google" onclick="handleGoogleLogin()">
             ${GOOGLE_SVG} Continuer avec Google
           </button>
