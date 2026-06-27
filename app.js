@@ -423,9 +423,9 @@ function setStars(levelId, n) {
 
 function addXP(n) { state.save.xp += n; saveState(); }
 
-function updateMastery(verbId, correct) {
+function updateMastery(verbId, correct, max = 5) {
   const cur = getMastery(verbId);
-  state.save.mastery[verbId] = correct ? Math.min(5, cur + 1) : Math.max(0, cur - 1);
+  state.save.mastery[verbId] = correct ? Math.min(max, cur + 1) : Math.max(0, cur - 1);
   saveState();
 }
 
@@ -1484,10 +1484,10 @@ function handleFillBlank(btn, value) {
     const xp = 10 + (fb.streak >= 3 ? 5 : 0);
     fb.xpEarned += xp;
     addXP(xp);
-    updateMastery(sent.verb.id, true);
+    updateMastery(sent.verb.id, true, 4);
   } else {
     fb.streak = 0;
-    updateMastery(sent.verb.id, false);
+    updateMastery(sent.verb.id, false, 4);
   }
 
   const msg      = isRight ? pick(MESSAGES_CORRECT) : pick(MESSAGES_WRONG);
@@ -1694,7 +1694,7 @@ function checkMatchingPair() {
     if (correct) {
       m.matched++;
       addXP(15);
-      updateMastery(leftVerb.id, true);
+      updateMastery(leftVerb.id, true, 3);
 
       // Remove matched pair
       m.left.splice(m.selLeft, 1);
@@ -1710,6 +1710,7 @@ function checkMatchingPair() {
       }
     } else {
       m.errors++;
+      updateMastery(leftVerb.id, false, 3);
       // Shuffle right column on error to mix things up
       m.right = shuffleArr(m.right);
     }
