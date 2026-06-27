@@ -19,6 +19,31 @@ async function fbSignInGoogle() {
   await firebase.auth().signInWithPopup(provider);
 }
 
+// Apple Sign-In
+// Setup : Firebase Console → Authentication → Sign-in method → Apple → Enable
+// Puis : developer.apple.com → Certificates → Services IDs → configure domaine + redirect URL
+async function fbSignInApple() {
+  const provider = new firebase.auth.OAuthProvider('apple.com');
+  provider.addScope('email');
+  provider.addScope('name');
+  await firebase.auth().signInWithPopup(provider);
+}
+
+// Email / mot de passe
+// Setup : Firebase Console → Authentication → Sign-in method → Email/Password → Enable
+async function fbSignInEmail(email, password) {
+  await firebase.auth().signInWithEmailAndPassword(email, password);
+}
+
+async function fbCreateAccount(email, password, displayName) {
+  const cred = await firebase.auth().createUserWithEmailAndPassword(email, password);
+  if (displayName) await cred.user.updateProfile({ displayName });
+}
+
+async function fbResetPassword(email) {
+  await firebase.auth().sendPasswordResetEmail(email);
+}
+
 async function fbSignOut() {
   await firebase.auth().signOut();
 }

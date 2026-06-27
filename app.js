@@ -1236,26 +1236,68 @@ function renderLoading() {
     </div>`;
 }
 
+let _emailMode = 'login';
+
 function showLoginScreen() {
+  _emailMode = 'login';
+  _renderLoginScreen();
+}
+
+function setEmailMode(mode) {
+  _emailMode = mode;
+  _renderLoginScreen();
+}
+
+function _renderLoginScreen() {
+  const reg = _emailMode === 'register';
+  const GOOGLE_SVG = `<svg width="18" height="18" viewBox="0 0 18 18" style="flex-shrink:0">
+    <path fill="#4285F4" d="M16.51 8H8.98v3h4.3c-.18 1-.74 1.48-1.6 2.04v2.01h2.6a7.8 7.8 0 002.38-5.88c0-.57-.05-.66-.15-1.18z"/>
+    <path fill="#34A853" d="M8.98 17c2.16 0 3.97-.72 5.3-1.94l-2.6-2a4.8 4.8 0 01-7.18-2.54H1.83v2.07A8 8 0 008.98 17z"/>
+    <path fill="#FBBC05" d="M4.5 10.52a4.8 4.8 0 010-3.04V5.41H1.83a8 8 0 000 7.18l2.67-2.07z"/>
+    <path fill="#EA4335" d="M8.98 4.18c1.17 0 2.23.4 3.06 1.2l2.3-2.3A8 8 0 001.83 5.4L4.5 7.49a4.77 4.77 0 014.48-3.31z"/>
+  </svg>`;
+  const APPLE_SVG = `<svg width="16" height="19" viewBox="0 0 17 20" fill="white" style="flex-shrink:0">
+    <path d="M13.35 10.37c-.02-2.17 1.77-3.21 1.85-3.27-1.01-1.47-2.58-1.68-3.14-1.7-1.34-.14-2.61.79-3.29.79-.68 0-1.73-.77-2.85-.75-1.46.02-2.81.85-3.56 2.15C.79 10.15 1.8 14.1 3.33 16.22c.76 1.09 1.66 2.31 2.84 2.27 1.14-.05 1.57-.73 2.95-.73s1.77.73 2.97.71c1.23-.02 2.01-1.11 2.76-2.2.87-1.26 1.23-2.48 1.25-2.54-.03-.01-2.73-1.04-2.75-4.16zM11.29 3.82c.63-.76 1.05-1.82.93-2.88-.9.04-1.98.6-2.63 1.35-.58.67-1.08 1.74-.94 2.77.99.08 2.01-.5 2.64-1.24z"/>
+  </svg>`;
+
   app().innerHTML = `
     ${renderHeader('Connexion')}
     <div class="screen-container">
       <div class="login-card">
-        <div style="font-size:60px;margin-bottom:16px">☁️</div>
+        <div style="font-size:56px;margin-bottom:12px">☁️</div>
         <h2 class="screen-title">Synchronise ta progression</h2>
-        <p class="screen-subtitle" style="margin-bottom:0">
-          Connecte-toi pour retrouver tes étoiles et ton XP sur tous tes appareils.
-        </p>
-        <button class="btn-google" onclick="handleGoogleLogin()">
-          <svg width="18" height="18" viewBox="0 0 18 18" style="flex-shrink:0">
-            <path fill="#4285F4" d="M16.51 8H8.98v3h4.3c-.18 1-.74 1.48-1.6 2.04v2.01h2.6a7.8 7.8 0 002.38-5.88c0-.57-.05-.66-.15-1.18z"/>
-            <path fill="#34A853" d="M8.98 17c2.16 0 3.97-.72 5.3-1.94l-2.6-2a4.8 4.8 0 01-7.18-2.54H1.83v2.07A8 8 0 008.98 17z"/>
-            <path fill="#FBBC05" d="M4.5 10.52a4.8 4.8 0 010-3.04V5.41H1.83a8 8 0 000 7.18l2.67-2.07z"/>
-            <path fill="#EA4335" d="M8.98 4.18c1.17 0 2.23.4 3.06 1.2l2.3-2.3A8 8 0 001.83 5.4L4.5 7.49a4.77 4.77 0 014.48-3.31z"/>
-          </svg>
-          Continuer avec Google
-        </button>
-        <button class="btn btn-secondary mt-16" onclick="renderHome()" style="width:100%">
+        <p class="screen-subtitle">Retrouve tes étoiles et ton XP sur tous tes appareils.</p>
+
+        <div class="social-btns">
+          <button class="btn-apple" onclick="handleAppleLogin()">
+            ${APPLE_SVG} Continuer avec Apple
+          </button>
+          <button class="btn-google" onclick="handleGoogleLogin()">
+            ${GOOGLE_SVG} Continuer avec Google
+          </button>
+        </div>
+
+        <div class="auth-divider"><span>ou</span></div>
+
+        <div class="auth-tabs">
+          <button class="auth-tab ${!reg ? 'active' : ''}" onclick="setEmailMode('login')">Se connecter</button>
+          <button class="auth-tab ${reg ? 'active' : ''}"  onclick="setEmailMode('register')">Créer un compte</button>
+        </div>
+
+        <div class="auth-form">
+          ${reg ? `<input type="text"  id="authName"     class="auth-input" placeholder="Ton prénom">` : ''}
+          <input  type="email"         id="authEmail"    class="auth-input" placeholder="Adresse e-mail">
+          <input  type="password"      id="authPassword" class="auth-input" placeholder="Mot de passe (6 caractères min.)">
+          ${reg ? `<input type="password" id="authConfirm" class="auth-input" placeholder="Confirme le mot de passe">` : ''}
+          <div id="loginError"></div>
+          <button class="btn btn-primary" style="width:100%;margin-top:4px" onclick="handleEmailAuth()">
+            ${reg ? 'Créer mon compte →' : 'Se connecter →'}
+          </button>
+          ${!reg ? `<button class="btn-forgot" onclick="handleResetPassword()">Mot de passe oublié ?</button>` : ''}
+        </div>
+
+        <div class="auth-divider"></div>
+        <button class="btn btn-secondary" onclick="renderHome()" style="width:100%">
           Continuer sans compte
         </button>
       </div>
@@ -1265,12 +1307,64 @@ function showLoginScreen() {
 async function handleGoogleLogin() {
   try {
     await fbSignInGoogle();
-    // onAuthChange s'occupe du reste
   } catch (e) {
-    if (e.code !== 'auth/popup-closed-by-user') {
-      alert('Erreur de connexion : ' + e.message);
-    }
+    if (e.code !== 'auth/popup-closed-by-user') _showLoginError(e.message);
   }
+}
+
+async function handleAppleLogin() {
+  try {
+    await fbSignInApple();
+  } catch (e) {
+    if (e.code !== 'auth/popup-closed-by-user') _showLoginError(e.message);
+  }
+}
+
+async function handleEmailAuth() {
+  const email    = document.getElementById('authEmail')?.value.trim();
+  const password = document.getElementById('authPassword')?.value;
+  const confirm  = document.getElementById('authConfirm')?.value;
+  const name     = document.getElementById('authName')?.value.trim();
+
+  if (!email || !password) { _showLoginError('Remplis tous les champs.'); return; }
+
+  if (_emailMode === 'register') {
+    if (password.length < 6) { _showLoginError('Le mot de passe doit faire au moins 6 caractères.'); return; }
+    if (password !== confirm) { _showLoginError('Les mots de passe ne correspondent pas.'); return; }
+    try {
+      await fbCreateAccount(email, password, name);
+    } catch (e) { _showLoginError(_friendlyAuthError(e)); }
+  } else {
+    try {
+      await fbSignInEmail(email, password);
+    } catch (e) { _showLoginError(_friendlyAuthError(e)); }
+  }
+}
+
+async function handleResetPassword() {
+  const email = document.getElementById('authEmail')?.value.trim();
+  if (!email) { _showLoginError('Entre ton adresse e-mail d\'abord.'); return; }
+  try {
+    await fbResetPassword(email);
+    _showLoginError('✅ E-mail de réinitialisation envoyé !', true);
+  } catch (e) { _showLoginError(_friendlyAuthError(e)); }
+}
+
+function _showLoginError(msg, success = false) {
+  const el = document.getElementById('loginError');
+  if (el) el.innerHTML = `<p class="${success ? 'req-ok' : 'req-error'}" style="margin:8px 0">${msg}</p>`;
+}
+
+function _friendlyAuthError(e) {
+  const map = {
+    'auth/user-not-found':       'Aucun compte avec cet e-mail.',
+    'auth/wrong-password':       'Mot de passe incorrect.',
+    'auth/email-already-in-use': 'Cet e-mail est déjà utilisé.',
+    'auth/invalid-email':        'Adresse e-mail invalide.',
+    'auth/weak-password':        'Mot de passe trop faible.',
+    'auth/invalid-credential':   'E-mail ou mot de passe incorrect.',
+  };
+  return map[e.code] || e.message;
 }
 
 async function handleLogout() {

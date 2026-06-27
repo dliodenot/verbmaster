@@ -636,6 +636,27 @@ body {
   text-align: center;
   margin-top: 24px;
 }
+.social-btns { display: flex; flex-direction: column; gap: 10px; margin-top: 20px; }
+
+.btn-apple {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  width: 100%;
+  padding: 14px 20px;
+  background: #000;
+  color: white;
+  border: none;
+  border-radius: 14px;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: inherit;
+  transition: opacity .15s;
+}
+.btn-apple:hover { opacity: .82; }
+
 .btn-google {
   display: flex;
   align-items: center;
@@ -658,6 +679,61 @@ body {
   border-color: #4285F4;
   box-shadow: 0 4px 14px rgba(66,133,244,.2);
 }
+
+.auth-divider {
+  display: flex; align-items: center; gap: 10px;
+  color: var(--muted); font-size: 13px; margin: 18px 0;
+}
+.auth-divider::before, .auth-divider::after {
+  content: ''; flex: 1; height: 1px; background: #e0e3ff;
+}
+.auth-tabs {
+  display: flex;
+  background: var(--bg);
+  border-radius: 12px;
+  padding: 4px;
+  gap: 4px;
+  margin-bottom: 14px;
+}
+.auth-tab {
+  flex: 1;
+  padding: 9px;
+  border: none;
+  border-radius: 9px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: inherit;
+  background: transparent;
+  color: var(--muted);
+  transition: all .15s;
+}
+.auth-tab.active { background: white; color: var(--purple); box-shadow: 0 2px 8px rgba(108,92,231,.15); }
+.auth-form { display: flex; flex-direction: column; gap: 10px; }
+.auth-input {
+  width: 100%;
+  padding: 13px 16px;
+  font-size: 15px;
+  font-family: inherit;
+  border: 2px solid #e0e3ff;
+  border-radius: 12px;
+  outline: none;
+  background: var(--bg);
+  transition: border-color .15s;
+}
+.auth-input:focus { border-color: var(--purple); background: white; }
+.btn-forgot {
+  background: none;
+  border: none;
+  color: var(--muted);
+  font-size: 13px;
+  cursor: pointer;
+  font-family: inherit;
+  text-decoration: underline;
+  padding: 4px 0;
+  text-align: center;
+}
+.btn-forgot:hover { color: var(--purple); }
 
 /* Loading spinner */
 .spinner {
