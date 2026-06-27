@@ -2342,7 +2342,7 @@ function renderStatsScreen() {
 
       <!-- Régularité -->
       <div class="stats-section-title">🔥 Régularité</div>
-      ${renderStreakCard()}
+      <div id="streak-card-wrap">${renderStreakCard()}</div>
 
       <!-- Progression par chapitre -->
       <div class="stats-section-title mt-16">📚 Progression par chapitre</div>
@@ -2382,26 +2382,44 @@ function calcPersonalStreak(dates = []) {
   return { current, best };
 }
 
+let calOffset = 0; // pages de 5 semaines en arrière
+
+function setCalOffset(delta) {
+  calOffset = Math.max(0, calOffset + delta);
+  const el = document.getElementById('streak-card-wrap');
+  if (el) el.innerHTML = renderStreakCard();
+}
+
 function renderStreakCard() {
   const dates   = [...new Set([...(state.save.activityDates || []), ...(state.user?.activityDates || [])])];
   const { current, best } = calcPersonalStreak(dates);
   const activeSet = new Set(dates);
 
-  // 35 derniers jours (5 semaines) — dates locales pour correspondre à todayStr()
   const localStr = d => [d.getFullYear(), String(d.getMonth()+1).padStart(2,'0'), String(d.getDate()).padStart(2,'0')].join('-');
-  const todayDate = new Date();
+  const MONTHS = ['Janv','Févr','Mars','Avr','Mai','Juin','Juil','Août','Sept','Oct','Déc'];
+
+  // Fenêtre de 35 jours décalée
+  const refDate = new Date();
+  refDate.setDate(refDate.getDate() - calOffset * 35);
+  const isCurrent = calOffset === 0;
+
   const cells = Array.from({ length: 35 }, (_, i) => {
-    const d = new Date(todayDate); d.setDate(d.getDate() - (34 - i));
+    const d = new Date(refDate); d.setDate(d.getDate() - (34 - i));
     const str = localStr(d);
-    return { str, isToday: i === 34, active: activeSet.has(str) };
+    return { str, isToday: isCurrent && i === 34, active: activeSet.has(str) };
   });
 
-  // Décalage : quel jour de semaine (Lun=0) commence la grille ?
-  const firstDay = new Date(todayDate); firstDay.setDate(firstDay.getDate() - 34);
-  const offset   = (firstDay.getDay() + 6) % 7;
+  // Libellé du mois affiché
+  const first = new Date(refDate); first.setDate(first.getDate() - 34);
+  const last  = new Date(refDate);
+  const monthLabel = first.getMonth() === last.getMonth()
+    ? `${MONTHS[last.getMonth()]} ${last.getFullYear()}`
+    : `${MONTHS[first.getMonth()]} – ${MONTHS[last.getMonth()]} ${last.getFullYear()}`;
 
+  // Décalage grille (Lun=0)
+  const gridOffset = (first.getDay() + 6) % 7;
   const gridHTML = [
-    ...Array(offset).fill('<div class="cal-day empty"></div>'),
+    ...Array(gridOffset).fill('<div class="cal-day empty"></div>'),
     ...cells.map(c => `<div class="cal-day${c.active ? ' active' : ''}${c.isToday ? ' today' : ''}" title="${c.str}"></div>`),
   ].join('');
 
@@ -2428,6 +2446,12 @@ function renderStreakCard() {
       </div>
 
       <p class="streak-msg">${streakMsg}</p>
+
+      <div class="cal-nav">
+        <button class="cal-nav-btn" onclick="setCalOffset(1)">←</button>
+        <span class="cal-nav-month">${monthLabel}</span>
+        <button class="cal-nav-btn" onclick="setCalOffset(-1)"${isCurrent ? ' disabled' : ''}>→</button>
+      </div>
 
       <div class="cal-week-header">
         ${['L','M','M','J','V','S','D'].map(l => `<span>${l}</span>`).join('')}

@@ -1068,6 +1068,18 @@ body {
 .cal-day.active  { background: var(--purple); }
 .cal-day.today   { outline: 2.5px solid var(--purple); outline-offset: 1px; }
 .cal-day.active.today { background: var(--purple); outline-color: var(--green); }
+.cal-nav {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 8px;
+}
+.cal-nav-month { font-size: 13px; font-weight: 700; color: var(--dark); }
+.cal-nav-btn {
+  background: none; border: 1.5px solid #e2e8f0; border-radius: 8px;
+  width: 30px; height: 30px; font-size: 14px; font-weight: 700;
+  cursor: pointer; color: var(--purple); display: flex; align-items: center; justify-content: center;
+}
+.cal-nav-btn:hover:not(:disabled) { background: #ede9ff; border-color: var(--purple); }
+.cal-nav-btn:disabled { opacity: .3; cursor: default; }
 .cal-legend {
   display: flex;
   align-items: center;
