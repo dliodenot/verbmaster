@@ -1806,7 +1806,7 @@ function showFillBlankResults() {
 ══════════════════════════════════════════ */
 const SPRINT_TIME      = 60; // secondes
 const BOSS_QUESTIONS   = 20;
-const BOSS_PASS_PCT    = 80;
+const BOSS_PASS_PCT    = 90;
 const BOSS_SPRINT_TIME = 90;
 
 // XP par bonne réponse selon la série en cours
