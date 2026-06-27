@@ -756,7 +756,7 @@ function renderLevelMenu(levelId) {
           <div class="mode-desc">Fiche mémo avec toutes les formes</div>
         </div>
         <div class="mode-card" onclick="startQuiz(${levelId})">
-          <div class="mode-icon">⚡</div>
+          <div class="mode-icon">🎯</div>
           <div class="mode-name">S'entraîner</div>
           <div class="mode-desc">${QUESTIONS_PER_QUIZ} questions – gagne des étoiles !</div>
         </div>
