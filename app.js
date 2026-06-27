@@ -94,6 +94,7 @@ function loadState() {
 
 function saveState() {
   try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state.save)); } catch (_) {}
+  if (state.user) fbSave(state.user.uid, state.save);
 }
 
 const state = {
@@ -103,6 +104,8 @@ const state = {
   mode: null,
   flashcardIndex: 0,
   quiz: null,
+  matching: null,
+  user: null,    // { uid, name, photo } quand connecté
 };
 
 function getStars(levelId) { return state.save.stars[levelId] || 0; }
@@ -252,6 +255,23 @@ const $ = s => document.querySelector(s);
 const app = () => document.getElementById('app');
 
 function renderHeader(subtitle = '') {
+  const xp = `<div class="xp-badge">⭐ ${state.save.xp} XP</div>`;
+
+  const authArea = state.user
+    ? `<div class="header-right">
+         ${xp}
+         <img src="${state.user.photo || ''}" class="user-avatar"
+              onerror="this.style.display='none'"
+              title="${state.user.name || 'Connecté'}">
+         <button class="logout-btn" onclick="handleLogout()">Déco</button>
+       </div>`
+    : `<div class="header-right">
+         ${xp}
+         ${FIREBASE_READY
+           ? `<button class="login-btn-small" onclick="showLoginScreen()">🔐 Connexion</button>`
+           : ''}
+       </div>`;
+
   return `
     <div class="header">
       <div class="logo">📚</div>
@@ -259,7 +279,7 @@ function renderHeader(subtitle = '') {
         <h1>VerbMaster</h1>
         ${subtitle ? `<div class="subtitle">${subtitle}</div>` : ''}
       </div>
-      <div class="xp-badge">⭐ ${state.save.xp} XP</div>
+      ${authArea}
     </div>`;
 }
 
@@ -960,6 +980,87 @@ function showMatchingResults() {
 }
 
 /* ══════════════════════════════════════════
-   INIT
+   AUTH & INIT
 ══════════════════════════════════════════ */
-renderHome();
+function renderLoading() {
+  app().innerHTML = `
+    ${renderHeader('')}
+    <div style="display:flex;flex-direction:column;align-items:center;
+                justify-content:center;height:60vh;gap:16px">
+      <div class="spinner"></div>
+      <p style="color:var(--muted);font-weight:600">Chargement…</p>
+    </div>`;
+}
+
+function showLoginScreen() {
+  app().innerHTML = `
+    ${renderHeader('Connexion')}
+    <div class="screen-container">
+      <div class="login-card">
+        <div style="font-size:60px;margin-bottom:16px">☁️</div>
+        <h2 class="screen-title">Synchronise ta progression</h2>
+        <p class="screen-subtitle" style="margin-bottom:0">
+          Connecte-toi pour retrouver tes étoiles et ton XP sur tous tes appareils.
+        </p>
+        <button class="btn-google" onclick="handleGoogleLogin()">
+          <svg width="18" height="18" viewBox="0 0 18 18" style="flex-shrink:0">
+            <path fill="#4285F4" d="M16.51 8H8.98v3h4.3c-.18 1-.74 1.48-1.6 2.04v2.01h2.6a7.8 7.8 0 002.38-5.88c0-.57-.05-.66-.15-1.18z"/>
+            <path fill="#34A853" d="M8.98 17c2.16 0 3.97-.72 5.3-1.94l-2.6-2a4.8 4.8 0 01-7.18-2.54H1.83v2.07A8 8 0 008.98 17z"/>
+            <path fill="#FBBC05" d="M4.5 10.52a4.8 4.8 0 010-3.04V5.41H1.83a8 8 0 000 7.18l2.67-2.07z"/>
+            <path fill="#EA4335" d="M8.98 4.18c1.17 0 2.23.4 3.06 1.2l2.3-2.3A8 8 0 001.83 5.4L4.5 7.49a4.77 4.77 0 014.48-3.31z"/>
+          </svg>
+          Continuer avec Google
+        </button>
+        <button class="btn btn-secondary mt-16" onclick="renderHome()" style="width:100%">
+          Continuer sans compte
+        </button>
+      </div>
+    </div>`;
+}
+
+async function handleGoogleLogin() {
+  try {
+    await fbSignInGoogle();
+    // onAuthChange s'occupe du reste
+  } catch (e) {
+    if (e.code !== 'auth/popup-closed-by-user') {
+      alert('Erreur de connexion : ' + e.message);
+    }
+  }
+}
+
+async function handleLogout() {
+  if (confirm('Te déconnecter ? Ta progression reste sauvegardée.')) {
+    await fbSignOut();
+    // onAuthChange repassera avec user=null → renderHome()
+  }
+}
+
+function mergeRemoteState(remote) {
+  state.save.xp = Math.max(state.save.xp || 0, remote.xp || 0);
+  Object.entries(remote.stars   || {}).forEach(([k, v]) => {
+    state.save.stars[k]   = Math.max(state.save.stars[k]   || 0, v);
+  });
+  Object.entries(remote.mastery || {}).forEach(([k, v]) => {
+    state.save.mastery[k] = Math.max(state.save.mastery[k] || 0, v);
+  });
+  saveState();
+}
+
+function initApp() {
+  if (FIREBASE_READY) renderLoading();
+
+  fbOnAuthChange(async user => {
+    if (user) {
+      state.user = { uid: user.uid, name: user.displayName, photo: user.photoURL };
+      const remote = await fbLoad(user.uid);
+      if (remote) mergeRemoteState(remote);
+      else saveState(); // première connexion → pousse les données locales
+    } else {
+      state.user = null;
+    }
+    renderHome();
+  });
+}
+
+initApp();
