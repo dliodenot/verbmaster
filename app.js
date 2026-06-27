@@ -815,8 +815,9 @@ function renderLevelMenu(levelId) {
   loadSprintLeaderboard(levelId);
 }
 
-async function loadSprintLeaderboard(levelId) {
-  const el = document.getElementById(`sprint-lb-${levelId}`);
+async function loadSprintLeaderboard(levelId, targetId) {
+  const elId = targetId || `sprint-lb-${levelId}`;
+  const el = document.getElementById(elId);
   if (!el) return;
   if (!state.user || !FIREBASE_READY) return;
 
@@ -838,13 +839,13 @@ async function loadSprintLeaderboard(levelId) {
       })),
     ].filter(e => e.score > 0).sort((a, b) => b.score - a.score || b.streak - a.streak);
 
-    if (!el || !document.getElementById(`sprint-lb-${levelId}`)) return;
+    if (!el || !document.getElementById(elId)) return;
     if (entries.length === 0) return;
 
     const myRank = entries.findIndex(e => e.isMe) + 1;
     const top5   = entries.slice(0, 5);
 
-    el.innerHTML = `
+    document.getElementById(elId).innerHTML = `
       <div class="sprint-lb-card">
         <div class="sprint-lb-title">🏆 Classement Sprint – Niveau ${levelId}</div>
         ${top5.map((e, i) => `
@@ -1781,7 +1782,8 @@ function showSprintResults() {
   if (!state.save.sprintBest) state.save.sprintBest = {};
   const _prevBest    = state.save.sprintBest[sp.levelId] || { score: 0, streak: 0 };
   const _isNewRecord = sp.correctCount > _prevBest.score;
-  sp.xpEarned = _isNewRecord ? sp.correctCount : 0;
+  const _combo20     = sp.maxStreak >= 20;
+  sp.xpEarned = _isNewRecord ? sp.correctCount * (_combo20 ? 2 : 1) : 0;
   recordActivity(sp.xpEarned);
 
   const _newBest = { score: Math.max(_prevBest.score, sp.correctCount), streak: Math.max(_prevBest.streak, sp.maxStreak) };
@@ -1827,13 +1829,14 @@ function showSprintResults() {
         <div class="results-breakdown" style="margin-top:8px">
           ${_isNewRecord
             ? `<div class="breakdown-row" style="font-weight:700;color:var(--purple)">
-                <span>🏅 Nouveau record !</span><span>+${sp.xpEarned} XP</span>
-               </div>`
+                <span>🏅 Nouveau record !</span><span>+${sp.xpEarned} XP${_combo20 ? ' <span class="sprint-x2-badge">×2</span>' : ''}</span>
+               </div>
+               ${_combo20 ? `<div class="breakdown-row" style="font-size:12px;color:#e17055;font-weight:600"><span>🔥 Combo 20+ débloqué – XP doublé !</span></div>` : ''}`
             : `<div class="breakdown-row" style="font-size:13px;color:var(--muted)">
                 <span>Pas de nouveau record – 0 XP</span><span>Record : ${_prevBest.score} bonnes</span>
                </div>`}
           <div class="breakdown-row" style="font-size:12px;color:var(--muted)">
-            <span>XP = nombre de bonnes réponses, seulement si record battu</span>
+            <span>XP = bonnes réponses si record · ×2 si combo 20+</span>
           </div>
         </div>
 
@@ -1843,7 +1846,9 @@ function showSprintResults() {
           <button class="btn btn-secondary" onclick="renderHome()">🏠 Accueil</button>
         </div>
       </div>
+      <div id="sprint-lb-results" class="sprint-lb-wrap" style="margin-top:12px"></div>
     </div>`;
+  loadSprintLeaderboard(sp.levelId, 'sprint-lb-results');
 }
 
 /* ══════════════════════════════════════════
