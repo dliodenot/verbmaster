@@ -260,7 +260,7 @@ function updateMastery(verbId, correct) {
 }
 
 function isChapterComplete(chapterId) {
-  return LEVELS.filter(l => l.chapter === chapterId).every(l => getStars(l.id) >= 2);
+  return LEVELS.filter(l => l.chapter === chapterId).every(l => getStars(l.id) >= 3);
 }
 
 function isLevelUnlocked(levelId) {
@@ -269,11 +269,10 @@ function isLevelUnlocked(levelId) {
   const chapterLevels = LEVELS.filter(l => l.chapter === level.chapter).map(l => l.id);
   const firstOfChapter = Math.min(...chapterLevels);
   if (levelId === firstOfChapter) {
-    // First level of a chapter: need previous chapter complete
     return isChapterComplete(level.chapter - 1);
   }
-  // Within a chapter: need previous level ≥ 1 star
-  return getStars(levelId - 1) >= 1;
+  // Within a chapter: need 2 stars on previous level
+  return getStars(levelId - 1) >= 2;
 }
 
 function getTotalMastered() {
@@ -509,7 +508,7 @@ function renderHome() {
 }
 
 function showLocked() {
-  alert('🔒 Débloque ce niveau en progressant dans les niveaux précédents !\n\nPour passer au chapitre suivant, il faut obtenir au moins 2⭐ dans tous les niveaux du chapitre actuel.');
+  alert('🔒 Débloque ce niveau en progressant dans les niveaux précédents !\n\nÀ l\'intérieur d\'un chapitre : 2⭐ dans le niveau précédent.\nPour passer au chapitre suivant : 3⭐ sur tous les niveaux du chapitre actuel.');
 }
 
 function selectLevel(levelId) {
