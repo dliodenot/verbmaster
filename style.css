@@ -974,10 +974,11 @@ body {
 }
 .stats-level-emoji  { font-size: 18px; }
 .stats-level-name   { font-size: 13px; font-weight: 700; }
-.stats-level-right  { flex: 1; }
-.stats-level-mastery { font-size: 11px; color: var(--muted); font-weight: 600; margin: 3px 0; }
+.stats-level-right  { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.stats-level-mastery { font-size: 11px; color: var(--muted); font-weight: 600; }
 .stats-mini-bar {
   height: 5px;
+  width: 100%;
   background: #e0e3ff;
   border-radius: 99px;
   overflow: hidden;
