@@ -3,12 +3,31 @@
 /* ══════════════════════════════════════════
    VERB DATA
 ══════════════════════════════════════════ */
+const CHAPTERS = [
+  { id: 1, name: 'Chapitre 1', subtitle: 'Les essentiels',   emoji: '📗', desc: '50 verbes incontournables' },
+  { id: 2, name: 'Chapitre 2', subtitle: 'Intermédiaire',    emoji: '📘', desc: '50 verbes pour aller plus loin' },
+  { id: 3, name: 'Chapitre 3', subtitle: 'Maîtrise totale',  emoji: '📕', desc: '50 verbes pour tout couvrir' },
+];
+
 const LEVELS = [
-  { id: 1, name: 'Débutant',      emoji: '🌱', color: '#00b894', min_stars_prev: 0 },
-  { id: 2, name: 'En route !',    emoji: '🚀', color: '#0984e3', min_stars_prev: 1 },
-  { id: 3, name: 'En progrès',    emoji: '⚡', color: '#6c5ce7', min_stars_prev: 1 },
-  { id: 4, name: 'Avancé',        emoji: '🔥', color: '#e17055', min_stars_prev: 2 },
-  { id: 5, name: 'Champion !',    emoji: '👑', color: '#fdcb6e', min_stars_prev: 2 },
+  // ── Chapitre 1 ──
+  { id: 1,  chapter: 1, name: 'Débutant',      emoji: '🌱', color: '#00b894' },
+  { id: 2,  chapter: 1, name: 'En route !',    emoji: '🚀', color: '#0984e3' },
+  { id: 3,  chapter: 1, name: 'En progrès',    emoji: '⚡', color: '#6c5ce7' },
+  { id: 4,  chapter: 1, name: 'Avancé',        emoji: '🔥', color: '#e17055' },
+  { id: 5,  chapter: 1, name: 'Champion !',    emoji: '👑', color: '#fdcb6e' },
+  // ── Chapitre 2 ──
+  { id: 6,  chapter: 2, name: 'Bâtisseur',     emoji: '🏗️', color: '#e17055' },
+  { id: 7,  chapter: 2, name: 'Explorateur',   emoji: '🧭', color: '#fd79a8' },
+  { id: 8,  chapter: 2, name: 'Conquérant',    emoji: '⚔️', color: '#a29bfe' },
+  { id: 9,  chapter: 2, name: 'Maestro',       emoji: '🎯', color: '#55efc4' },
+  { id: 10, chapter: 2, name: 'Légende',       emoji: '🌟', color: '#ffeaa7' },
+  // ── Chapitre 3 ──
+  { id: 11, chapter: 3, name: 'Virtuose',      emoji: '🎼', color: '#fab1a0' },
+  { id: 12, chapter: 3, name: 'Encyclopédiste',emoji: '📚', color: '#81ecec' },
+  { id: 13, chapter: 3, name: 'Expert',        emoji: '🧠', color: '#6c5ce7' },
+  { id: 14, chapter: 3, name: 'Élite',         emoji: '💎', color: '#2d3436' },
+  { id: 15, chapter: 3, name: 'Ultime',        emoji: '🏅', color: '#fdcb6e' },
 ];
 
 const VERBS = [
@@ -66,7 +85,117 @@ const VERBS = [
   { id: 47, level: 5, inf: 'ring',    v2: 'rang',       v3: 'rung',    fr: 'sonner'  },
   { id: 48, level: 5, inf: 'sing',    v2: 'sang',       v3: 'sung',    fr: 'chanter' },
   { id: 49, level: 5, inf: 'steal',   v2: 'stole',      v3: 'stolen',  fr: 'voler (dérober)' },
-  { id: 50, level: 5, inf: 'throw',   v2: 'threw',      v3: 'thrown',  fr: 'lancer / jeter' },
+  { id: 50, level: 5,  inf: 'throw',      v2: 'threw',      v3: 'thrown',    fr: 'lancer / jeter' },
+  // ── NIVEAU 6 ──
+  { id: 51, level: 6,  inf: 'beat',       v2: 'beat',       v3: 'beaten',    fr: 'battre', note: 'v1 = v2 : beat / beat / beaten' },
+  { id: 52, level: 6,  inf: 'bend',       v2: 'bent',       v3: 'bent',      fr: 'plier / courber' },
+  { id: 53, level: 6,  inf: 'build',      v2: 'built',      v3: 'built',     fr: 'construire' },
+  { id: 54, level: 6,  inf: 'burn',       v2: 'burned / burnt', v3: 'burned / burnt', fr: 'brûler' },
+  { id: 55, level: 6,  inf: 'cut',        v2: 'cut',        v3: 'cut',       fr: 'couper', note: 'Toutes les formes identiques !' },
+  { id: 56, level: 6,  inf: 'deal',       v2: 'dealt',      v3: 'dealt',     fr: 'traiter / distribuer' },
+  { id: 57, level: 6,  inf: 'dig',        v2: 'dug',        v3: 'dug',       fr: 'creuser' },
+  { id: 58, level: 6,  inf: 'feed',       v2: 'fed',        v3: 'fed',       fr: 'nourrir' },
+  { id: 59, level: 6,  inf: 'fight',      v2: 'fought',     v3: 'fought',    fr: 'se battre' },
+  { id: 60, level: 6,  inf: 'hang',       v2: 'hung',       v3: 'hung',      fr: 'accrocher / pendre' },
+  // ── NIVEAU 7 ──
+  { id: 61, level: 7,  inf: 'hold',       v2: 'held',       v3: 'held',      fr: 'tenir' },
+  { id: 62, level: 7,  inf: 'hurt',       v2: 'hurt',       v3: 'hurt',      fr: 'blesser / faire mal', note: 'Toutes les formes identiques !' },
+  { id: 63, level: 7,  inf: 'lay',        v2: 'laid',       v3: 'laid',      fr: 'poser / pondre' },
+  { id: 64, level: 7,  inf: 'lead',       v2: 'led',        v3: 'led',       fr: 'diriger / mener' },
+  { id: 65, level: 7,  inf: 'lend',       v2: 'lent',       v3: 'lent',      fr: 'prêter' },
+  { id: 66, level: 7,  inf: 'let',        v2: 'let',        v3: 'let',       fr: 'laisser / permettre', note: 'Toutes les formes identiques !' },
+  { id: 67, level: 7,  inf: 'lie',        v2: 'lay',        v3: 'lain',      fr: 's\'allonger', note: 'Ne pas confondre avec "lay" !' },
+  { id: 68, level: 7,  inf: 'lose',       v2: 'lost',       v3: 'lost',      fr: 'perdre' },
+  { id: 69, level: 7,  inf: 'mean',       v2: 'meant',      v3: 'meant',     fr: 'signifier / vouloir dire' },
+  { id: 70, level: 7,  inf: 'pay',        v2: 'paid',       v3: 'paid',      fr: 'payer' },
+  // ── NIVEAU 8 ──
+  { id: 71, level: 8,  inf: 'rise',       v2: 'rose',       v3: 'risen',     fr: 'se lever / monter' },
+  { id: 72, level: 8,  inf: 'set',        v2: 'set',        v3: 'set',       fr: 'fixer / régler', note: 'Toutes les formes identiques !' },
+  { id: 73, level: 8,  inf: 'shake',      v2: 'shook',      v3: 'shaken',    fr: 'secouer' },
+  { id: 74, level: 8,  inf: 'shine',      v2: 'shone',      v3: 'shone',     fr: 'briller' },
+  { id: 75, level: 8,  inf: 'sit',        v2: 'sat',        v3: 'sat',       fr: 's\'asseoir' },
+  { id: 76, level: 8,  inf: 'sleep',      v2: 'slept',      v3: 'slept',     fr: 'dormir' },
+  { id: 77, level: 8,  inf: 'slide',      v2: 'slid',       v3: 'slid',      fr: 'glisser' },
+  { id: 78, level: 8,  inf: 'spend',      v2: 'spent',      v3: 'spent',     fr: 'dépenser / passer (du temps)' },
+  { id: 79, level: 8,  inf: 'spread',     v2: 'spread',     v3: 'spread',    fr: 'répandre / étaler', note: 'Toutes les formes identiques !' },
+  { id: 80, level: 8,  inf: 'stand',      v2: 'stood',      v3: 'stood',     fr: 'se tenir debout' },
+  // ── NIVEAU 9 ──
+  { id: 81, level: 9,  inf: 'strike',     v2: 'struck',     v3: 'struck',    fr: 'frapper' },
+  { id: 82, level: 9,  inf: 'sweep',      v2: 'swept',      v3: 'swept',     fr: 'balayer' },
+  { id: 83, level: 9,  inf: 'swing',      v2: 'swung',      v3: 'swung',     fr: 'se balancer' },
+  { id: 84, level: 9,  inf: 'teach',      v2: 'taught',     v3: 'taught',    fr: 'enseigner' },
+  { id: 85, level: 9,  inf: 'tear',       v2: 'tore',       v3: 'torn',      fr: 'déchirer' },
+  { id: 86, level: 9,  inf: 'understand', v2: 'understood', v3: 'understood', fr: 'comprendre' },
+  { id: 87, level: 9,  inf: 'wake',       v2: 'woke',       v3: 'woken',     fr: 'se réveiller' },
+  { id: 88, level: 9,  inf: 'wear',       v2: 'wore',       v3: 'worn',      fr: 'porter (vêtement)' },
+  { id: 89, level: 9,  inf: 'weep',       v2: 'wept',       v3: 'wept',      fr: 'pleurer' },
+  { id: 90, level: 9,  inf: 'win',        v2: 'won',        v3: 'won',       fr: 'gagner' },
+  // ── NIVEAU 10 ──
+  { id: 91,  level: 10, inf: 'cast',      v2: 'cast',       v3: 'cast',      fr: 'lancer / projeter', note: 'Toutes les formes identiques !' },
+  { id: 92,  level: 10, inf: 'forbid',    v2: 'forbade',    v3: 'forbidden', fr: 'interdire' },
+  { id: 93,  level: 10, inf: 'freeze',    v2: 'froze',      v3: 'frozen',    fr: 'geler / congeler' },
+  { id: 94,  level: 10, inf: 'leap',      v2: 'leapt',      v3: 'leapt',     fr: 'bondir / sauter' },
+  { id: 95,  level: 10, inf: 'shed',      v2: 'shed',       v3: 'shed',      fr: 'perdre (poils, larmes)', note: 'Toutes les formes identiques !' },
+  { id: 96,  level: 10, inf: 'shoot',     v2: 'shot',       v3: 'shot',      fr: 'tirer (arme)' },
+  { id: 97,  level: 10, inf: 'show',      v2: 'showed',     v3: 'shown',     fr: 'montrer' },
+  { id: 98,  level: 10, inf: 'split',     v2: 'split',      v3: 'split',     fr: 'diviser / fendre', note: 'Toutes les formes identiques !' },
+  { id: 99,  level: 10, inf: 'wind',      v2: 'wound',      v3: 'wound',     fr: 'enrouler / remonter' },
+  { id: 100, level: 10, inf: 'withdraw',  v2: 'withdrew',   v3: 'withdrawn', fr: 'retirer / se retirer' },
+  // ── NIVEAU 11 ──
+  { id: 101, level: 11, inf: 'arise',     v2: 'arose',      v3: 'arisen',    fr: 'survenir / se lever' },
+  { id: 102, level: 11, inf: 'bear',      v2: 'bore',       v3: 'borne',     fr: 'porter / supporter' },
+  { id: 103, level: 11, inf: 'bind',      v2: 'bound',      v3: 'bound',     fr: 'lier / attacher' },
+  { id: 104, level: 11, inf: 'breed',     v2: 'bred',       v3: 'bred',      fr: 'élever (animaux) / reproduire' },
+  { id: 105, level: 11, inf: 'burst',     v2: 'burst',      v3: 'burst',     fr: 'éclater / exploser', note: 'Toutes les formes identiques !' },
+  { id: 106, level: 11, inf: 'creep',     v2: 'crept',      v3: 'crept',     fr: 'ramper / se glisser' },
+  { id: 107, level: 11, inf: 'dream',     v2: 'dreamt',     v3: 'dreamt',    fr: 'rêver' },
+  { id: 108, level: 11, inf: 'flee',      v2: 'fled',       v3: 'fled',      fr: 'fuir / s\'enfuir' },
+  { id: 109, level: 11, inf: 'fling',     v2: 'flung',      v3: 'flung',     fr: 'jeter violemment' },
+  { id: 110, level: 11, inf: 'kneel',     v2: 'knelt',      v3: 'knelt',     fr: 's\'agenouiller' },
+  // ── NIVEAU 12 ──
+  { id: 111, level: 12, inf: 'lean',      v2: 'leant',      v3: 'leant',     fr: 's\'appuyer / se pencher' },
+  { id: 112, level: 12, inf: 'light',     v2: 'lit',        v3: 'lit',       fr: 'allumer / éclairer' },
+  { id: 113, level: 12, inf: 'overcome',  v2: 'overcame',   v3: 'overcome',  fr: 'surmonter / vaincre' },
+  { id: 114, level: 12, inf: 'prove',     v2: 'proved',     v3: 'proven',    fr: 'prouver' },
+  { id: 115, level: 12, inf: 'seek',      v2: 'sought',     v3: 'sought',    fr: 'chercher / rechercher' },
+  { id: 116, level: 12, inf: 'smell',     v2: 'smelt',      v3: 'smelt',     fr: 'sentir (odeur)' },
+  { id: 117, level: 12, inf: 'speed',     v2: 'sped',       v3: 'sped',      fr: 'aller vite / accélérer' },
+  { id: 118, level: 12, inf: 'spill',     v2: 'spilt',      v3: 'spilt',     fr: 'renverser / répandre' },
+  { id: 119, level: 12, inf: 'spoil',     v2: 'spoilt',     v3: 'spoilt',    fr: 'gâter / abîmer' },
+  { id: 120, level: 12, inf: 'spring',    v2: 'sprang',     v3: 'sprung',    fr: 'jaillir / bondir' },
+  // ── NIVEAU 13 ──
+  { id: 121, level: 13, inf: 'stick',     v2: 'stuck',      v3: 'stuck',     fr: 'coller / être coincé' },
+  { id: 122, level: 13, inf: 'sting',     v2: 'stung',      v3: 'stung',     fr: 'piquer (insecte)' },
+  { id: 123, level: 13, inf: 'stink',     v2: 'stank',      v3: 'stunk',     fr: 'puer / sentir mauvais' },
+  { id: 124, level: 13, inf: 'stride',    v2: 'strode',     v3: 'stridden',  fr: 'marcher à grands pas' },
+  { id: 125, level: 13, inf: 'string',    v2: 'strung',      v3: 'strung',   fr: 'enfiler / tendre (une corde)' },
+  { id: 126, level: 13, inf: 'swear',     v2: 'swore',      v3: 'sworn',     fr: 'jurer / promettre' },
+  { id: 127, level: 13, inf: 'swell',     v2: 'swelled',    v3: 'swollen',   fr: 'gonfler / enfler' },
+  { id: 128, level: 13, inf: 'tread',     v2: 'trod',       v3: 'trodden',   fr: 'marcher sur / fouler' },
+  { id: 129, level: 13, inf: 'upset',     v2: 'upset',      v3: 'upset',     fr: 'bouleverser / contrarier', note: 'Toutes les formes identiques !' },
+  { id: 130, level: 13, inf: 'weave',     v2: 'wove',       v3: 'woven',     fr: 'tisser' },
+  // ── NIVEAU 14 ──
+  { id: 131, level: 14, inf: 'bet',       v2: 'bet',        v3: 'bet',       fr: 'parier', note: 'Toutes les formes identiques !' },
+  { id: 132, level: 14, inf: 'bid',       v2: 'bid',        v3: 'bid',       fr: 'offrir (enchère) / faire une mise', note: 'Toutes les formes identiques !' },
+  { id: 133, level: 14, inf: 'fit',       v2: 'fitted',     v3: 'fitted',    fr: 'aller (taille) / adapter' },
+  { id: 134, level: 14, inf: 'grind',     v2: 'ground',     v3: 'ground',    fr: 'moudre / grincer' },
+  { id: 135, level: 14, inf: 'knit',      v2: 'knit',       v3: 'knit',      fr: 'tricoter' },
+  { id: 136, level: 14, inf: 'mistake',   v2: 'mistook',    v3: 'mistaken',  fr: 'confondre / se tromper' },
+  { id: 137, level: 14, inf: 'quit',      v2: 'quit',       v3: 'quit',      fr: 'quitter / arrêter', note: 'Toutes les formes identiques !' },
+  { id: 138, level: 14, inf: 'rid',       v2: 'rid',        v3: 'rid',       fr: 'se débarrasser de', note: 'Toutes les formes identiques !' },
+  { id: 139, level: 14, inf: 'shrink',    v2: 'shrank',     v3: 'shrunk',    fr: 'rétrécir' },
+  { id: 140, level: 14, inf: 'spell',     v2: 'spelt',      v3: 'spelt',     fr: 'épeler' },
+  // ── NIVEAU 15 ──
+  { id: 141, level: 15, inf: 'spin',      v2: 'spun',       v3: 'spun',      fr: 'tourner / faire pivoter' },
+  { id: 142, level: 15, inf: 'spit',      v2: 'spat',       v3: 'spat',      fr: 'cracher' },
+  { id: 143, level: 15, inf: 'strive',    v2: 'strove',     v3: 'striven',   fr: 's\'efforcer / s\'évertuer' },
+  { id: 144, level: 15, inf: 'undertake', v2: 'undertook',  v3: 'undertaken', fr: 'entreprendre / se charger de' },
+  { id: 145, level: 15, inf: 'withstand', v2: 'withstood',  v3: 'withstood', fr: 'résister à / supporter' },
+  { id: 146, level: 15, inf: 'forsake',   v2: 'forsook',    v3: 'forsaken',  fr: 'abandonner / renoncer à' },
+  { id: 147, level: 15, inf: 'undergo',   v2: 'underwent',  v3: 'undergone', fr: 'subir / se soumettre à' },
+  { id: 148, level: 15, inf: 'wring',     v2: 'wrung',      v3: 'wrung',     fr: 'tordre / essorer' },
+  { id: 149, level: 15, inf: 'mislead',   v2: 'misled',     v3: 'misled',    fr: 'induire en erreur / égarer' },
+  { id: 150, level: 15, inf: 'sow',       v2: 'sowed',      v3: 'sown',      fr: 'semer' },
 ];
 
 const QUESTIONS_PER_QUIZ = 12;
@@ -130,11 +259,21 @@ function updateMastery(verbId, correct) {
   saveState();
 }
 
+function isChapterComplete(chapterId) {
+  return LEVELS.filter(l => l.chapter === chapterId).every(l => getStars(l.id) >= 2);
+}
+
 function isLevelUnlocked(levelId) {
   if (levelId === 1) return true;
-  const prev = levelId - 1;
-  const required = LEVELS[levelId - 1].min_stars_prev;
-  return getStars(prev) >= required;
+  const level = LEVELS.find(l => l.id === levelId);
+  const chapterLevels = LEVELS.filter(l => l.chapter === level.chapter).map(l => l.id);
+  const firstOfChapter = Math.min(...chapterLevels);
+  if (levelId === firstOfChapter) {
+    // First level of a chapter: need previous chapter complete
+    return isChapterComplete(level.chapter - 1);
+  }
+  // Within a chapter: need previous level ≥ 1 star
+  return getStars(levelId - 1) >= 1;
 }
 
 function getTotalMastered() {
@@ -297,26 +436,39 @@ function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
 ══════════════════════════════════════════ */
 function renderHome() {
   const totalStars = Object.values(state.save.stars).reduce((a, b) => a + b, 0);
-  const mastered   = getTotalMastered();
   const { current: streak } = calcPersonalStreak(state.user?.activityDates || []);
 
-  const levelsHTML = LEVELS.map(lv => {
-    const verbs = VERBS.filter(v => v.level === lv.id);
-    const unlocked = isLevelUnlocked(lv.id);
-    const stars = getStars(lv.id);
-    const prevCompleted = lv.id > 1 && getStars(lv.id - 1) > 0;
+  const chaptersHTML = CHAPTERS.map(ch => {
+    const chLocked = ch.id > 1 && !isChapterComplete(ch.id - 1);
+    const chDone   = isChapterComplete(ch.id);
+    const levelsHTML = LEVELS.filter(lv => lv.chapter === ch.id).map(lv => {
+      const verbs    = VERBS.filter(v => v.level === lv.id);
+      const unlocked = !chLocked && isLevelUnlocked(lv.id);
+      const stars    = getStars(lv.id);
+      return `
+        <div class="level-card ${unlocked ? '' : 'locked'} ${stars > 0 ? 'active' : ''}"
+             onclick="${unlocked ? `selectLevel(${lv.id})` : 'showLocked()'}">
+          <div class="level-ribbon" style="background:${lv.color}">${lv.emoji}</div>
+          <div class="level-num">Niveau ${lv.id}</div>
+          <div class="level-name">${lv.name}</div>
+          <div class="level-count">${verbs.length} verbes</div>
+          <div class="stars">${starsHTML(stars)}</div>
+          ${!unlocked ? '<div class="lock-icon">🔒</div>' : ''}
+        </div>`;
+    }).join('');
 
     return `
-      <div class="level-card ${unlocked ? '' : 'locked'} ${stars > 0 ? 'active' : ''}"
-           onclick="${unlocked ? `selectLevel(${lv.id})` : 'showLocked()'}">
-        <div class="level-ribbon" style="background:${lv.color}">
-          ${lv.emoji}
+      <div class="chapter-block ${chLocked ? 'chapter-locked' : ''} ${chDone ? 'chapter-done' : ''}">
+        <div class="chapter-header">
+          <span class="chapter-emoji">${ch.emoji}</span>
+          <div class="chapter-titles">
+            <div class="chapter-name">${ch.name} — ${ch.subtitle}</div>
+            <div class="chapter-desc">${ch.desc}</div>
+          </div>
+          ${chLocked ? '<span class="chapter-lock">🔒 Terminer le chapitre précédent</span>' : ''}
+          ${chDone   ? '<span class="chapter-badge">✅ Complété !</span>' : ''}
         </div>
-        <div class="level-num">Niveau ${lv.id}</div>
-        <div class="level-name">${lv.name}</div>
-        <div class="level-count">${verbs.length} verbes</div>
-        <div class="stars">${starsHTML(stars)}</div>
-        ${!unlocked ? '<div class="lock-icon">🔒</div>' : ''}
+        <div class="levels-grid">${levelsHTML}</div>
       </div>`;
   }).join('');
 
@@ -326,7 +478,7 @@ function renderHome() {
       <div class="home-hero">
         <div class="big-emoji">🏆</div>
         <h2>Apprends les verbes irréguliers !</h2>
-        <p>5 niveaux · 50 verbes · Des défis amusants</p>
+        <p>3 chapitres · 15 niveaux · 150 verbes</p>
       </div>
 
       <div class="stats-bar">
@@ -348,15 +500,16 @@ function renderHome() {
         ${state.user ? `
           <button class="home-action-btn" onclick="renderStatsScreen()">📊 Mes stats</button>
           <button class="home-action-btn" onclick="renderFriendsScreen()">👥 Mes amis</button>
-        ` : ''}</div>
+        ` : ''}
+      </div>
 
       <div class="section-title">📖 Choisis ton niveau</div>
-      <div class="levels-grid">${levelsHTML}</div>
+      ${chaptersHTML}
     </div>`;
 }
 
 function showLocked() {
-  alert('🔒 Débloque ce niveau en obtenant au moins ⭐ dans le niveau précédent !');
+  alert('🔒 Débloque ce niveau en progressant dans les niveaux précédents !\n\nPour passer au chapitre suivant, il faut obtenir au moins 2⭐ dans tous les niveaux du chapitre actuel.');
 }
 
 function selectLevel(levelId) {
@@ -995,26 +1148,46 @@ function renderStatsScreen() {
   const mastered   = getTotalMastered();
   const totalStars = Object.values(state.save.stars).reduce((a, b) => a + b, 0);
 
-  // Progression par niveau
-  const levelsHTML = LEVELS.map(lv => {
-    const verbs      = VERBS.filter(v => v.level === lv.id);
-    const stars      = getStars(lv.id);
-    const masteredLv = verbs.filter(v => getMastery(v.id) >= 3).length;
-    const unlocked   = isLevelUnlocked(lv.id);
-    const pct        = Math.round((masteredLv / verbs.length) * 100);
-    return `
-      <div class="stats-level-row ${unlocked ? '' : 'locked'}">
-        <div class="stats-level-label">
-          <span class="stats-level-emoji">${lv.emoji}</span>
-          <span class="stats-level-name">${lv.name}</span>
-        </div>
-        <div class="stats-level-right">
-          <div class="stars" style="font-size:14px">${starsHTML(stars)}</div>
-          <div class="stats-level-mastery">${masteredLv}/${verbs.length} maîtrisés</div>
-          <div class="stats-mini-bar">
-            <div class="stats-mini-fill" style="width:${unlocked ? pct : 0}%"></div>
+  // Progression par chapitre + niveau
+  const chaptersHTML = CHAPTERS.map(ch => {
+    const chLocked = ch.id > 1 && !isChapterComplete(ch.id - 1);
+    const chDone   = isChapterComplete(ch.id);
+    const chVerbs  = VERBS.filter(v => {
+      const lv = LEVELS.find(l => l.id === v.level);
+      return lv && lv.chapter === ch.id;
+    });
+    const chMastered = chVerbs.filter(v => getMastery(v.id) >= 3).length;
+    const chPct = Math.round((chMastered / chVerbs.length) * 100);
+
+    const levelsHTML = LEVELS.filter(lv => lv.chapter === ch.id).map(lv => {
+      const verbs      = VERBS.filter(v => v.level === lv.id);
+      const stars      = getStars(lv.id);
+      const masteredLv = verbs.filter(v => getMastery(v.id) >= 3).length;
+      const unlocked   = !chLocked && isLevelUnlocked(lv.id);
+      const pct        = Math.round((masteredLv / verbs.length) * 100);
+      return `
+        <div class="stats-level-row ${unlocked ? '' : 'locked'}">
+          <div class="stats-level-label">
+            <span class="stats-level-emoji">${lv.emoji}</span>
+            <span class="stats-level-name">Niv. ${lv.id} ${lv.name}</span>
           </div>
+          <div class="stats-level-right">
+            <div class="stars" style="font-size:14px">${starsHTML(stars)}</div>
+            <div class="stats-level-mastery">${masteredLv}/${verbs.length}</div>
+            <div class="stats-mini-bar">
+              <div class="stats-mini-fill" style="width:${unlocked ? pct : 0}%"></div>
+            </div>
+          </div>
+        </div>`;
+    }).join('');
+
+    return `
+      <div class="stats-chapter-block ${chLocked ? 'chapter-locked' : ''}">
+        <div class="stats-chapter-header">
+          <span>${ch.emoji} ${ch.name} — ${ch.subtitle}</span>
+          <span class="stats-chapter-pct">${chLocked ? '🔒' : chPct + '%'}</span>
         </div>
+        <div class="stats-levels-card">${levelsHTML}</div>
       </div>`;
   }).join('');
 
@@ -1044,9 +1217,9 @@ function renderStatsScreen() {
       <div class="stats-section-title">🔥 Régularité</div>
       ${renderStreakCard()}
 
-      <!-- Progression par niveau -->
-      <div class="stats-section-title mt-16">📚 Progression par niveau</div>
-      <div class="stats-levels-card">${levelsHTML}</div>
+      <!-- Progression par chapitre -->
+      <div class="stats-section-title mt-16">📚 Progression par chapitre</div>
+      ${chaptersHTML}
     </div>`;
 }
 
