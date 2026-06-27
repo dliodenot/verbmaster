@@ -775,9 +775,8 @@ function renderLevelMenu(levelId) {
       </div>
       <div class="mode-card mode-card-wide mt-8 sprint-card" onclick="startSprint(${levelId})">
         <div class="mode-icon">⚡</div>
-        <div class="mode-name">Sprint <span class="sprint-badge">60s · questions infinies</span></div>
+        <div class="mode-name">Sprint</div>
         <div class="mode-desc">Enchaîne les bonnes réponses – plus la série est longue, plus tu gagnes d'XP !</div>
-        ${myBest ? `<div class="sprint-pb">🏅 Record : <strong>${myBest.score}</strong> bonnes · 🔥 série <strong>${myBest.streak}</strong></div>` : ''}
       </div>
       <div id="sprint-lb-${levelId}" class="sprint-lb-wrap"></div>
 
