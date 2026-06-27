@@ -388,7 +388,7 @@ function loadState() {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (raw) return JSON.parse(raw);
   } catch (_) {}
-  return { xp: 0, stars: {}, mastery: {}, sprintBest: {}, bossComplete: {}, bossScore: {}, bossSprintBest: {} };
+  return { xp: 0, stars: {}, mastery: {}, sprintBest: {}, bossComplete: {}, bossScore: {}, bossSprintBest: {}, activityDates: [] };
 }
 
 function saveState() {
@@ -633,7 +633,7 @@ function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
 ══════════════════════════════════════════ */
 function renderHome() {
   const totalStars = Object.values(state.save.stars).reduce((a, b) => a + b, 0);
-  const { current: streak } = calcPersonalStreak(state.user?.activityDates || []);
+  const { current: streak } = calcPersonalStreak([...new Set([...(state.save.activityDates || []), ...(state.user?.activityDates || [])])]);
 
   const chaptersHTML = CHAPTERS.map(ch => {
     const chLocked   = ch.id > 1 && !isBossComplete(ch.id - 1);
@@ -2270,7 +2270,7 @@ function showMatchingResults() {
 }
 
 function renderStatsScreen() {
-  const dates    = state.user?.activityDates || [];
+  const dates    = [...new Set([...(state.save.activityDates || []), ...(state.user?.activityDates || [])])];
   const { current, best } = calcPersonalStreak(dates);
   const mastered   = getTotalMastered();
   const totalStars = Object.values(state.save.stars).reduce((a, b) => a + b, 0);
@@ -2383,7 +2383,7 @@ function calcPersonalStreak(dates = []) {
 }
 
 function renderStreakCard() {
-  const dates   = state.user?.activityDates || [];
+  const dates   = [...new Set([...(state.save.activityDates || []), ...(state.user?.activityDates || [])])];
   const { current, best } = calcPersonalStreak(dates);
   const activeSet = new Set(dates);
 
@@ -2441,8 +2441,13 @@ function renderStreakCard() {
 }
 
 function recordActivity(xpEarned) {
-  if (!state.user) return;
   const today = todayStr();
+  if (!state.save.activityDates) state.save.activityDates = [];
+  if (!state.save.activityDates.includes(today)) {
+    state.save.activityDates.push(today);
+    saveState();
+  }
+  if (!state.user) return;
   if (!state.user.activityDates.includes(today)) state.user.activityDates.push(today);
   fbUpdateActivity(state.user.uid, xpEarned);
 }

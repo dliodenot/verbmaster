@@ -1052,12 +1052,14 @@ body {
 }
 .cal-grid {
   display: grid;
-  grid-template-columns: repeat(7, 1fr);
+  grid-template-columns: repeat(7, 26px);
   gap: 4px;
+  justify-content: center;
 }
 .cal-day {
-  aspect-ratio: 1;
-  border-radius: 6px;
+  width: 26px;
+  height: 26px;
+  border-radius: 5px;
   background: #f0f2ff;
   transition: transform .1s;
 }
