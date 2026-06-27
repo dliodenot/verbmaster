@@ -366,6 +366,13 @@ function renderLevelMenu(levelId) {
           <div class="mode-desc">${QUESTIONS_PER_QUIZ} questions – gagne des étoiles !</div>
         </div>
       </div>
+      <div class="mode-card mode-card-wide mt-16" onclick="startMatching(${levelId})">
+        <div class="mode-icon">🔗</div>
+        <div class="mode-name">Relier les mots</div>
+        <div class="mode-desc">
+          Relie ~${Math.min(20, levelId * 10)} verbes à leur traduction en cliquant sur les paires
+        </div>
+      </div>
 
       <div class="section-title mt-24">📋 Liste des verbes</div>
       <div class="verb-table-wrap">
@@ -732,6 +739,217 @@ function showResults() {
           </button>
           <button class="btn btn-secondary" onclick="startStudy(${quiz.levelId})">
             📖 Revoir les fiches
+          </button>
+          <button class="btn btn-secondary" onclick="renderHome()">
+            🏠 Accueil
+          </button>
+        </div>
+      </div>
+    </div>`;
+}
+
+/* ══════════════════════════════════════════
+   MATCHING EXERCISE
+══════════════════════════════════════════ */
+const MATCH_VISIBLE = 5;
+
+function shuffleArr(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function startMatching(levelId) {
+  // Pool: all verbs from levels 1 → levelId, shuffled, capped at 20
+  const pool = shuffleArr(VERBS.filter(v => v.level <= levelId)).slice(0, 20);
+  const initVisible = pool.splice(0, Math.min(MATCH_VISIBLE, pool.length));
+
+  // direction: which language is on which side (random each game)
+  const dir = Math.random() < .5 ? 'fr_en' : 'en_fr';
+
+  state.matching = {
+    levelId,
+    pool,
+    left:     [...initVisible],
+    right:    shuffleArr([...initVisible]),
+    selLeft:  null,
+    selRight: null,
+    total:    initVisible.length + pool.length,
+    matched:  0,
+    errors:   0,
+    locked:   false,
+    dir,
+  };
+
+  renderMatching();
+}
+
+function renderMatching() {
+  const m = state.matching;
+  const pct = m.total ? Math.round((m.matched / m.total) * 100) : 0;
+  const leftLabel  = m.dir === 'fr_en' ? '🇫🇷 Français'  : '🇬🇧 Anglais';
+  const rightLabel = m.dir === 'fr_en' ? '🇬🇧 Anglais'   : '🇫🇷 Français';
+
+  const itemHTML = (verb, i, side) => {
+    const text = (side === 'left')
+      ? (m.dir === 'fr_en' ? verb.fr : verb.inf)
+      : (m.dir === 'fr_en' ? verb.inf : verb.fr);
+    const sel = side === 'left' ? m.selLeft === i : m.selRight === i;
+    return `
+      <div class="matching-item${sel ? ' selected' : ''}"
+           id="m${side[0]}-${i}"
+           onclick="selectMatch${side === 'left' ? 'Left' : 'Right'}(${i})">
+        ${text}
+      </div>`;
+  };
+
+  app().innerHTML = `
+    ${renderHeader('Relier les mots')}
+    <div class="screen-container">
+      <button class="back-btn" onclick="renderLevelMenu(${m.levelId})">← Retour</button>
+
+      <div class="matching-stats">
+        <span style="color:var(--green);font-weight:800">✅ ${m.matched} / ${m.total}</span>
+        <span class="pill">Niv. 1–${m.levelId}</span>
+        ${m.errors > 0
+          ? `<span style="color:var(--red)">❌ ${m.errors} erreur${m.errors > 1 ? 's' : ''}</span>`
+          : '<span></span>'}
+      </div>
+      <div class="matching-progress">
+        <div class="matching-progress-fill" style="width:${pct}%"></div>
+      </div>
+
+      <div class="matching-hint">
+        Clique un mot à gauche, puis son équivalent à droite.
+      </div>
+
+      <div class="matching-columns">
+        <div class="matching-col">
+          <div class="matching-col-header">${leftLabel}</div>
+          ${m.left.map((v, i) => itemHTML(v, i, 'left')).join('')}
+        </div>
+        <div class="matching-col">
+          <div class="matching-col-header">${rightLabel}</div>
+          ${m.right.map((v, i) => itemHTML(v, i, 'right')).join('')}
+        </div>
+      </div>
+    </div>`;
+}
+
+function selectMatchLeft(idx) {
+  const m = state.matching;
+  if (m.locked) return;
+  // deselect if same item clicked again
+  if (m.selLeft === idx) { m.selLeft = null; renderMatching(); return; }
+  m.selLeft = idx;
+  if (m.selRight !== null) checkMatchingPair();
+  else renderMatching();
+}
+
+function selectMatchRight(idx) {
+  const m = state.matching;
+  if (m.locked) return;
+  if (m.selRight === idx) { m.selRight = null; renderMatching(); return; }
+  m.selRight = idx;
+  if (m.selLeft !== null) checkMatchingPair();
+  else renderMatching();
+}
+
+function checkMatchingPair() {
+  const m = state.matching;
+  const leftVerb  = m.left[m.selLeft];
+  const rightVerb = m.right[m.selRight];
+  const correct   = leftVerb.id === rightVerb.id;
+
+  m.locked = true;
+
+  // Highlight selections before adding result class
+  renderMatching();
+
+  const leftEl  = document.getElementById(`ml-${m.selLeft}`);
+  const rightEl = document.getElementById(`mr-${m.selRight}`);
+  if (leftEl)  leftEl.classList.add(correct ? 'match-correct' : 'match-wrong');
+  if (rightEl) rightEl.classList.add(correct ? 'match-correct' : 'match-wrong');
+
+  setTimeout(() => {
+    if (correct) {
+      m.matched++;
+      addXP(15);
+      updateMastery(leftVerb.id, true);
+
+      // Remove matched pair
+      m.left.splice(m.selLeft, 1);
+      m.right.splice(m.selRight, 1);
+
+      // Refill from pool
+      if (m.pool.length > 0) {
+        const newVerb = m.pool.shift();
+        m.left.push(newVerb);
+        // Insert at random position in right column
+        const pos = Math.floor(Math.random() * (m.right.length + 1));
+        m.right.splice(pos, 0, newVerb);
+      }
+    } else {
+      m.errors++;
+      // Shuffle right column on error to mix things up
+      m.right = shuffleArr(m.right);
+    }
+
+    m.selLeft  = null;
+    m.selRight = null;
+    m.locked   = false;
+
+    if (m.left.length === 0) showMatchingResults();
+    else renderMatching();
+  }, correct ? 600 : 750);
+}
+
+function showMatchingResults() {
+  const m = state.matching;
+  const attempts  = m.matched + m.errors;
+  const accuracy  = attempts > 0 ? Math.round((m.matched / attempts) * 100) : 100;
+  const xpEarned  = m.matched * 15;
+  const emoji     = m.errors === 0 ? '🏆' : accuracy >= 80 ? '🎉' : accuracy >= 60 ? '👍' : '💪';
+  const title     = m.errors === 0 ? 'Parfait, zéro erreur !' : accuracy >= 80 ? 'Excellent !' : 'Bien joué !';
+  const subtitle  = `Tu as relié ${m.matched} verbe${m.matched > 1 ? 's' : ''} sur ${m.total} !`;
+
+  app().innerHTML = `
+    ${renderHeader('Résultats – Relier les mots')}
+    <div class="screen-container">
+      <div class="results-card">
+        <div class="results-emoji">${emoji}</div>
+        <div class="results-title">${title}</div>
+        <div class="results-subtitle">${subtitle}</div>
+
+        <div class="results-score-big">${accuracy}%</div>
+        <div class="results-score-label">de précision</div>
+
+        <div class="results-breakdown">
+          <div class="breakdown-row">
+            <span class="breakdown-label">Paires trouvées</span>
+            <span class="breakdown-value" style="color:var(--green)">✅ ${m.matched}</span>
+          </div>
+          <div class="breakdown-row">
+            <span class="breakdown-label">Erreurs</span>
+            <span class="breakdown-value" style="color:${m.errors > 0 ? 'var(--red)' : 'var(--green)'}">
+              ${m.errors === 0 ? '✅ Aucune' : `❌ ${m.errors}`}
+            </span>
+          </div>
+          <div class="breakdown-row">
+            <span class="breakdown-label">XP gagnés</span>
+            <span class="breakdown-value" style="color:var(--purple)">⭐ +${xpEarned}</span>
+          </div>
+        </div>
+
+        <div class="results-btns">
+          <button class="btn btn-primary" onclick="startMatching(${m.levelId})">
+            🔄 Rejouer (nouvelles paires)
+          </button>
+          <button class="btn btn-secondary" onclick="renderLevelMenu(${m.levelId})">
+            ← Niveau ${m.levelId}
           </button>
           <button class="btn btn-secondary" onclick="renderHome()">
             🏠 Accueil
