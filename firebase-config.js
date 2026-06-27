@@ -21,10 +21,11 @@
 // ─────────────────────────────────────────────────────────────
 
 const FIREBASE_CONFIG = {
-  apiKey:            'YOUR_API_KEY',
-  authDomain:        'YOUR_PROJECT.firebaseapp.com',
-  projectId:         'YOUR_PROJECT_ID',
-  storageBucket:     'YOUR_PROJECT.appspot.com',
-  messagingSenderId: 'YOUR_SENDER_ID',
-  appId:             'YOUR_APP_ID',
+  apiKey: "AIzaSyC5P5eqWupaRxLOAmgH0BWso2vlmTTpf5o",
+  authDomain: "verbmaster-8b11b.firebaseapp.com",
+  projectId: "verbmaster-8b11b",
+  storageBucket: "verbmaster-8b11b.firebasestorage.app",
+  messagingSenderId: "876909949310",
+  appId: "1:876909949310:web:6fe4f8d798ed8cd26b032f",
+  measurementId: "G-47Z4R2BPW0"
 };
