@@ -2412,8 +2412,10 @@ function renderStreakCard() {
   // Libellé du mois affiché
   const first = new Date(refDate); first.setDate(first.getDate() - 34);
   const last  = new Date(refDate);
-  const monthLabel = first.getMonth() === last.getMonth()
+  const monthLabel = first.getMonth() === last.getMonth() && first.getFullYear() === last.getFullYear()
     ? `${MONTHS[last.getMonth()]} ${last.getFullYear()}`
+    : first.getFullYear() !== last.getFullYear()
+    ? `${MONTHS[first.getMonth()]} ${first.getFullYear()} – ${MONTHS[last.getMonth()]} ${last.getFullYear()}`
     : `${MONTHS[first.getMonth()]} – ${MONTHS[last.getMonth()]} ${last.getFullYear()}`;
 
   // Décalage grille (Lun=0)
