@@ -828,18 +828,19 @@ async function loadSprintLeaderboard(levelId, targetId) {
       accepted.map(f => fbGetUserPublic(f.uids.find(u => u !== state.user.uid)))
     );
 
-    const myBest = state.save.sprintBest?.[levelId] || { score: 0, streak: 0 };
+    const myBest = state.save.sprintBest?.[levelId] || { score: 0, streak: 0, xp: 0 };
     const entries = [
       { name: state.user.name || 'Moi', photo: state.user.photo, isMe: true,
-        score: myBest.score, streak: myBest.streak },
+        score: myBest.score, streak: myBest.streak, xp: myBest.xp || 0 },
       ...friendDocs.filter(Boolean).map(fd => ({
         name: fd.displayName || 'Ami', photo: fd.photoURL, isMe: false,
         score:  fd.sprintBest?.[levelId]?.score  || 0,
         streak: fd.sprintBest?.[levelId]?.streak || 0,
+        xp:     fd.sprintBest?.[levelId]?.xp     || 0,
       })),
-    ].filter(e => e.score > 0).sort((a, b) => b.score - a.score || b.streak - a.streak);
+    ].filter(e => e.xp > 0 || e.score > 0).sort((a, b) => b.xp - a.xp || b.score - a.score);
 
-    if (!el || !document.getElementById(elId)) return;
+    if (!document.getElementById(elId)) return;
     if (entries.length === 0) return;
 
     const myRank = entries.findIndex(e => e.isMe) + 1;
@@ -853,10 +854,10 @@ async function loadSprintLeaderboard(levelId, targetId) {
             <span class="sprint-lb-rank">${i + 1}</span>
             ${e.photo ? `<img src="${e.photo}" class="sprint-lb-avatar" referrerpolicy="no-referrer">` : '<span class="sprint-lb-avatar sprint-lb-avatar-ph"></span>'}
             <span class="sprint-lb-name">${e.name}${e.isMe ? ' <span class="sprint-lb-me-tag">moi</span>' : ''}</span>
-            <span class="sprint-lb-score">✅ ${e.score}</span>
-            <span class="sprint-lb-streak">🔥 ${e.streak}</span>
+            <span class="sprint-lb-score">⭐ ${e.xp} XP</span>
+            <span class="sprint-lb-streak">✅ ${e.score} · 🔥 ${e.streak}</span>
           </div>`).join('')}
-        ${myRank > 5 ? `<div class="sprint-lb-mypos">Ta position : #${myRank} · ✅ ${myBest.score} · 🔥 ${myBest.streak}</div>` : ''}
+        ${myRank > 5 ? `<div class="sprint-lb-mypos">Ta position : #${myRank} · ⭐ ${myBest.xp || 0} XP · ✅ ${myBest.score}</div>` : ''}
       </div>`;
   } catch (e) {
     console.warn('Sprint leaderboard:', e);
@@ -1786,8 +1787,12 @@ function showSprintResults() {
   sp.xpEarned = _isNewRecord ? sp.correctCount * (_combo20 ? 2 : 1) : 0;
   recordActivity(sp.xpEarned);
 
-  const _newBest = { score: Math.max(_prevBest.score, sp.correctCount), streak: Math.max(_prevBest.streak, sp.maxStreak) };
-  if (_newBest.score !== _prevBest.score || _newBest.streak !== _prevBest.streak) {
+  const _newBest = {
+    score:  Math.max(_prevBest.score,  sp.correctCount),
+    streak: Math.max(_prevBest.streak, sp.maxStreak),
+    xp:     _isNewRecord ? sp.xpEarned : (_prevBest.xp || 0),
+  };
+  if (_newBest.score !== _prevBest.score || _newBest.streak !== _prevBest.streak || _newBest.xp !== (_prevBest.xp || 0)) {
     state.save.sprintBest[sp.levelId] = _newBest;
     saveState();
     if (state.user) fbSave(state.user.uid, state.save);
@@ -1840,13 +1845,14 @@ function showSprintResults() {
           </div>
         </div>
 
+        <div id="sprint-lb-results" class="sprint-lb-wrap" style="margin-top:12px"></div>
+
         <div class="results-btns">
           <button class="btn btn-primary" onclick="startSprint(${sp.levelId})">🔄 Rejouer</button>
           <button class="btn btn-secondary" onclick="renderLevelMenu(${sp.levelId})">← Niveau ${sp.levelId}</button>
           <button class="btn btn-secondary" onclick="renderHome()">🏠 Accueil</button>
         </div>
       </div>
-      <div id="sprint-lb-results" class="sprint-lb-wrap" style="margin-top:12px"></div>
     </div>`;
   loadSprintLeaderboard(sp.levelId, 'sprint-lb-results');
 }
@@ -2624,10 +2630,11 @@ function mergeRemoteState(remote) {
   });
   if (!state.save.sprintBest) state.save.sprintBest = {};
   Object.entries(remote.sprintBest || {}).forEach(([k, v]) => {
-    const cur = state.save.sprintBest[k] || { score: 0, streak: 0 };
+    const cur = state.save.sprintBest[k] || { score: 0, streak: 0, xp: 0 };
     state.save.sprintBest[k] = {
       score:  Math.max(cur.score,  v.score  || 0),
       streak: Math.max(cur.streak, v.streak || 0),
+      xp:     Math.max(cur.xp || 0, v.xp   || 0),
     };
   });
   saveState();
