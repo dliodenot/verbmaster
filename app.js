@@ -495,6 +495,25 @@ function renderHome() {
         </div>
       </div>
 
+      <div class="daily-challenge-wrap">
+        ${(() => {
+          const done    = hasDoneDaily();
+          const typeLabel = _dailyTypeLabel();
+          const unlockedCount = VERBS.filter(v => isLevelUnlocked(v.level)).length;
+          if (unlockedCount < 5) return '';
+          return `
+            <button class="daily-challenge-btn ${done ? 'done' : ''}"
+                    onclick="${done ? '' : 'startDailyChallenge()'}">
+              <span class="daily-challenge-icon">⚡</span>
+              <div class="daily-challenge-text">
+                <div class="daily-challenge-title">Défi du jour</div>
+                <div class="daily-challenge-sub">${done ? '✅ Complété ! Reviens demain' : typeLabel + ' · 20 questions · ' + unlockedCount + ' verbes'}</div>
+              </div>
+              ${done ? '' : '<span class="daily-challenge-arrow">→</span>'}
+            </button>`;
+        })()}
+      </div>
+
       <div class="home-action-btns">
         ${state.user ? `
           <button class="home-action-btn" onclick="renderStatsScreen()">📊 Mes stats</button>
@@ -718,10 +737,19 @@ function renderQuizQuestion() {
     [Q_TYPES.TYPE_V3]:      '✏️ Écris le participe passé',
   }[q.type];
 
+  const isDaily = state.mode === 'daily';
+  const headerTitle = isDaily ? '⚡ Défi du jour' : `Niveau ${state.levelId} – S'entraîner`;
+  const backBtn     = isDaily
+    ? `<button class="back-btn" onclick="confirmQuitDaily()">← Quitter</button>`
+    : `<button class="back-btn" onclick="renderLevelMenu(${state.levelId})">← Retour</button>`;
+  const timerHTML   = isDaily
+    ? `<span class="daily-timer-live" id="daily-timer">⏱ 0:00</span>`
+    : '';
+
   app().innerHTML = `
-    ${renderHeader(`Niveau ${state.levelId} – S'entraîner`)}
+    ${renderHeader(headerTitle)}
     <div class="screen-container">
-      <button class="back-btn" onclick="renderLevelMenu(${state.levelId})">← Retour</button>
+      ${backBtn}
 
       <div class="quiz-header">
         <div class="quiz-progress-bar">
@@ -732,6 +760,7 @@ function renderQuizQuestion() {
           <span class="quiz-score-live">
             ✅ ${quiz.correctCount} correctes
             ${streakHTML}
+            ${timerHTML}
           </span>
         </div>
       </div>
@@ -748,6 +777,8 @@ function renderQuizQuestion() {
       <div id="feedbackArea"></div>
       <div id="nextArea"></div>
     </div>`;
+
+  if (isDaily) _tickDailyTimer();
 
   if (q.type === Q_TYPES.TYPE_V2 || q.type === Q_TYPES.TYPE_V3) {
     document.getElementById('typeInput')?.focus();
@@ -824,8 +855,9 @@ function showFeedback(isRight, correctAnswer) {
 
   const nextArea = document.getElementById('nextArea');
   const isLast = quiz.currentIndex === quiz.questions.length - 1;
+  const endFn  = state.mode === 'daily' ? 'showDailyResults()' : 'showResults()';
   nextArea.innerHTML = `
-    <button class="next-btn mt-8" onclick="${isLast ? 'showResults()' : 'nextQuestion()'}">
+    <button class="next-btn mt-8" onclick="${isLast ? endFn : 'nextQuestion()'}">
       ${isLast ? 'Voir mon score 🏆' : 'Question suivante →'}
     </button>`;
 }
@@ -924,6 +956,206 @@ function showResults() {
           <button class="btn btn-secondary" onclick="renderHome()">
             🏠 Accueil
           </button>
+        </div>
+      </div>
+    </div>`;
+}
+
+/* ══════════════════════════════════════════
+   DAILY CHALLENGE
+══════════════════════════════════════════ */
+const DAILY_QUESTIONS = 20;
+
+function getDailyType() {
+  const d = new Date();
+  const day = Math.floor((d - new Date(d.getFullYear(), 0, 0)) / 86400000);
+  return day % 3; // 0=traduction, 1=prétérit, 2=participe passé
+}
+
+function _dailyTypeWeights() {
+  const t = getDailyType();
+  if (t === 1) return [
+    { type: Q_TYPES.TYPE_V2, w: 4 }, { type: Q_TYPES.V2_QCM, w: 4 },
+    { type: Q_TYPES.TRANSL_FR_EN, w: 1 },
+  ];
+  if (t === 2) return [
+    { type: Q_TYPES.TYPE_V3, w: 4 }, { type: Q_TYPES.V3_QCM, w: 4 },
+    { type: Q_TYPES.TRANSL_FR_EN, w: 1 },
+  ];
+  return [
+    { type: Q_TYPES.TRANSL_FR_EN, w: 3 }, { type: Q_TYPES.TRANSL_EN_FR, w: 3 },
+    { type: Q_TYPES.V2_QCM, w: 1 }, { type: Q_TYPES.V3_QCM, w: 1 },
+  ];
+}
+
+function _dailyTypeLabel() {
+  const t = getDailyType();
+  return t === 1 ? '⚡ Jour Prétérit' : t === 2 ? '📝 Jour Participe passé' : '🌍 Jour Traduction';
+}
+
+function generateDailyQuiz() {
+  const pool = shuffleArr(VERBS.filter(v => isLevelUnlocked(v.level))).slice(0, DAILY_QUESTIONS);
+  const allVerbs = VERBS;
+  const typeWeights = _dailyTypeWeights();
+  const typePool = typeWeights.flatMap(t => Array(t.w).fill(t.type));
+
+  const questions = pool.map(verb => {
+    const qtype = typePool[Math.floor(Math.random() * typePool.length)];
+    let q = { type: qtype, verb };
+    if (qtype === Q_TYPES.TRANSL_FR_EN) {
+      const { choices, correct } = buildChoices(verb, 'inf', allVerbs);
+      return { ...q, choices, correct, question: 'Comment dit-on en anglais :', highlight: verb.fr };
+    } else if (qtype === Q_TYPES.TRANSL_EN_FR) {
+      const { choices, correct } = buildChoices(verb, 'fr', allVerbs);
+      return { ...q, choices, correct, question: 'Que veut dire ce verbe en français ?', highlight: verb.inf };
+    } else if (qtype === Q_TYPES.V2_QCM) {
+      const { choices, correct } = buildChoices(verb, 'v2', allVerbs);
+      return { ...q, choices, correct, question: 'Quel est le prétérit de', highlight: verb.inf };
+    } else if (qtype === Q_TYPES.V3_QCM) {
+      const { choices, correct } = buildChoices(verb, 'v3', allVerbs);
+      return { ...q, choices, correct, question: 'Quel est le participe passé de', highlight: verb.inf };
+    } else if (qtype === Q_TYPES.TYPE_V2) {
+      return { ...q, correct: verb.v2, question: 'Écris le prétérit de', highlight: verb.inf };
+    } else {
+      return { ...q, correct: verb.v3, question: 'Écris le participe passé de', highlight: verb.inf };
+    }
+  });
+
+  return {
+    levelId: null,
+    questions,
+    currentIndex: 0,
+    correctCount: 0,
+    streak: 0,
+    maxStreak: 0,
+    xpEarned: 0,
+    answered: false,
+  };
+}
+
+function hasDoneDaily() {
+  return state.save.lastDailyDate === todayStr();
+}
+
+function startDailyChallenge() {
+  if (hasDoneDaily()) { alert('✅ Tu as déjà fait le défi du jour ! Reviens demain.'); return; }
+  state.mode = 'daily';
+  state.quiz = generateDailyQuiz();
+  state.dailyTimer = { startTime: Date.now(), elapsed: 0, interval: null };
+  state.dailyTimer.interval = setInterval(() => {
+    state.dailyTimer.elapsed = Math.floor((Date.now() - state.dailyTimer.startTime) / 1000);
+  }, 1000);
+  renderQuizQuestion();
+}
+
+function _tickDailyTimer() {
+  clearInterval(_tickDailyTimer._id);
+  _tickDailyTimer._id = setInterval(() => {
+    const el = document.getElementById('daily-timer');
+    if (!el) { clearInterval(_tickDailyTimer._id); return; }
+    const s = Math.floor((Date.now() - state.dailyTimer.startTime) / 1000);
+    const m = Math.floor(s / 60);
+    el.textContent = `⏱ ${m}:${String(s % 60).padStart(2, '0')}`;
+  }, 1000);
+}
+
+function _stopDailyTimer() {
+  clearInterval(_tickDailyTimer._id);
+  if (state.dailyTimer) {
+    state.dailyTimer.elapsed = Math.floor((Date.now() - state.dailyTimer.startTime) / 1000);
+    clearInterval(state.dailyTimer.interval);
+  }
+}
+
+function calcDailyXP(correct, total, maxStreak, elapsed) {
+  const pct = correct / total;
+  const base = correct * 5;
+  const accuracy = pct >= 0.9 ? 50 : pct >= 0.7 ? 25 : 0;
+  const streak   = Math.max(0, maxStreak - 5) * 3;
+  const speed    = elapsed < 60 ? 30 : elapsed < 90 ? 20 : elapsed < 120 ? 10 : 0;
+  return { base, accuracy, streak, speed, total: base + accuracy + streak + speed };
+}
+
+function confirmQuitDaily() {
+  if (confirm('Abandonner le défi du jour ? Ta progression ne sera pas sauvegardée.')) {
+    _stopDailyTimer();
+    state.mode = null;
+    renderHome();
+  }
+}
+
+function showDailyResults() {
+  _stopDailyTimer();
+  const quiz    = state.quiz;
+  const total   = quiz.questions.length;
+  const correct = quiz.correctCount;
+  const pct     = Math.round((correct / total) * 100);
+  const elapsed = state.dailyTimer?.elapsed || 0;
+  const xp      = calcDailyXP(correct, total, quiz.maxStreak, elapsed);
+
+  // Mark daily done + save XP
+  state.save.lastDailyDate = todayStr();
+  addXP(xp.total);
+  recordActivity(xp.total);
+  state.mode = null;
+
+  const emoji = pct >= 90 ? '🏆' : pct >= 70 ? '🎉' : pct >= 50 ? '👍' : '💪';
+  const title = pct >= 90 ? 'Parfait !' : pct >= 70 ? 'Bien joué !' : pct >= 50 ? 'Pas mal !' : 'Continue !';
+  const elapsedFmt = `${Math.floor(elapsed / 60)}:${String(elapsed % 60).padStart(2, '0')}`;
+
+  const bonusRows = [
+    { label: 'Base (réponses)', val: `+${xp.base} XP` },
+    xp.accuracy ? { label: 'Bonus précision', val: `+${xp.accuracy} XP 🎯` } : null,
+    xp.streak   ? { label: 'Bonus série',      val: `+${xp.streak} XP 🔥` }  : null,
+    xp.speed    ? { label: 'Bonus vitesse',    val: `+${xp.speed} XP ⚡` }   : null,
+  ].filter(Boolean).map(r => `
+    <div class="breakdown-row">
+      <span class="breakdown-label">${r.label}</span>
+      <span class="breakdown-value" style="color:var(--purple)">${r.val}</span>
+    </div>`).join('');
+
+  app().innerHTML = `
+    ${renderHeader('Défi du jour – Résultats')}
+    <div class="screen-container">
+      <div class="results-card">
+        <div class="daily-badge">${_dailyTypeLabel()}</div>
+        <div class="results-emoji">${emoji}</div>
+        <div class="results-title">${title}</div>
+
+        <div class="results-score-big">${pct}%</div>
+        <div class="results-score-label">${correct} / ${total} bonnes réponses · ⏱ ${elapsedFmt}</div>
+
+        <div class="daily-xp-total">+${xp.total} XP</div>
+
+        <div class="results-breakdown">
+          <div class="breakdown-row">
+            <span class="breakdown-label">Bonnes réponses</span>
+            <span class="breakdown-value" style="color:var(--green)">✅ ${correct}</span>
+          </div>
+          <div class="breakdown-row">
+            <span class="breakdown-label">Erreurs</span>
+            <span class="breakdown-value" style="color:var(--red)">❌ ${total - correct}</span>
+          </div>
+          <div class="breakdown-row">
+            <span class="breakdown-label">Meilleure série</span>
+            <span class="breakdown-value">🔥 ${quiz.maxStreak}</span>
+          </div>
+          <div class="breakdown-row">
+            <span class="breakdown-label">Temps</span>
+            <span class="breakdown-value">⏱ ${elapsedFmt}</span>
+          </div>
+        </div>
+
+        <div class="results-breakdown" style="margin-top:8px">
+          <div class="breakdown-row" style="font-weight:700;color:var(--purple)">
+            <span>Total XP gagné</span><span>+${xp.total}</span>
+          </div>
+          ${bonusRows}
+        </div>
+
+        <div class="results-btns">
+          <button class="btn btn-secondary" onclick="renderHome()">🏠 Accueil</button>
+          <button class="btn btn-secondary" onclick="renderStatsScreen()">📊 Mes stats</button>
         </div>
       </div>
     </div>`;

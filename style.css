@@ -1215,6 +1215,67 @@ body {
 }
 .stats-chapter-pct { color: var(--purple); }
 
+/* ── Daily Challenge ── */
+.daily-challenge-wrap { margin: 0 0 16px; }
+
+.daily-challenge-btn {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  background: linear-gradient(135deg, #6c5ce7 0%, #a29bfe 100%);
+  color: #fff;
+  border: none;
+  border-radius: 18px;
+  padding: 18px 20px;
+  cursor: pointer;
+  box-shadow: 0 4px 18px rgba(108,92,231,.35);
+  text-align: left;
+  transition: transform .15s, box-shadow .15s;
+}
+.daily-challenge-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(108,92,231,.4); }
+.daily-challenge-btn.done {
+  background: linear-gradient(135deg, #636e72 0%, #b2bec3 100%);
+  box-shadow: none;
+  cursor: default;
+  opacity: .75;
+}
+.daily-challenge-icon { font-size: 32px; flex-shrink: 0; }
+.daily-challenge-text { flex: 1; }
+.daily-challenge-title { font-size: 18px; font-weight: 800; letter-spacing: .3px; }
+.daily-challenge-sub   { font-size: 12px; opacity: .88; margin-top: 3px; }
+.daily-challenge-arrow { font-size: 22px; font-weight: 700; opacity: .8; }
+
+/* Timer in quiz header */
+.daily-timer-live {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--purple);
+  background: #ede9ff;
+  padding: 3px 8px;
+  border-radius: 8px;
+  margin-left: 6px;
+}
+
+/* Daily results */
+.daily-badge {
+  display: inline-block;
+  background: linear-gradient(135deg, #6c5ce7, #a29bfe);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 5px 14px;
+  border-radius: 20px;
+  margin-bottom: 12px;
+  letter-spacing: .5px;
+}
+.daily-xp-total {
+  font-size: 36px;
+  font-weight: 900;
+  color: var(--purple);
+  margin: 10px 0 4px;
+}
+
 /* Responsiveness */
 @media (max-width: 480px) {
   .choices { grid-template-columns: 1fr; }
