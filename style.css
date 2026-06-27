@@ -1320,6 +1320,8 @@ body {
 }
 @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: .5; } }
 .sprint-result-big { font-size: 52px; font-weight: 900; color: var(--purple); line-height: 1; margin: 8px 0 4px; }
+.sprint-xp-next { font-size: 12px; font-weight: 700; color: var(--purple); background: #ede9ff; padding: 3px 8px; border-radius: 8px; }
+.sprint-progress { background: linear-gradient(90deg, var(--green), #55efc4); transition: width .1s linear; }
 
 /* Responsiveness */
 @media (max-width: 480px) {

@@ -774,8 +774,8 @@ function renderLevelMenu(levelId) {
       </div>
       <div class="mode-card mode-card-wide mt-8 sprint-card" onclick="startSprint(${levelId})">
         <div class="mode-icon">⚡</div>
-        <div class="mode-name">Sprint <span class="sprint-badge">${SPRINT_QUESTIONS} questions · ${SPRINT_TIME}s</span></div>
-        <div class="mode-desc">Réponds le plus vite possible – bonus XP pour la vitesse !</div>
+        <div class="mode-name">Sprint <span class="sprint-badge">60s · questions infinies</span></div>
+        <div class="mode-desc">Enchaîne les bonnes réponses – plus la série est longue, plus tu gagnes d'XP !</div>
       </div>
 
       <div class="section-title mt-24">📋 Liste des verbes</div>
@@ -1572,33 +1572,49 @@ function showFillBlankResults() {
 /* ══════════════════════════════════════════
    SPRINT MODE
 ══════════════════════════════════════════ */
-const SPRINT_QUESTIONS = 20;
-const SPRINT_TIME      = 60; // secondes
+const SPRINT_TIME = 60; // secondes
+
+// XP par bonne réponse selon la série en cours
+function sprintXP(streak) {
+  if (streak >= 15) return 15;
+  if (streak >= 10) return 12;
+  if (streak >= 5)  return 8;
+  return 5;
+}
+
+// Génère une question V2_QCM ou V3_QCM pour le sprint
+function _genSprintQ(verb) {
+  const type  = Math.random() < 0.6 ? Q_TYPES.V2_QCM : Q_TYPES.V3_QCM;
+  const field = type === Q_TYPES.V2_QCM ? 'v2' : 'v3';
+  const { choices, correct } = buildChoices(verb, field, VERBS);
+  return { type, verb, choices, correct,
+    question: type === Q_TYPES.V2_QCM ? 'Prétérit de' : 'Participe passé de',
+    highlight: verb.inf };
+}
+
+function _nextSprintQ() {
+  const sp = state.sprint;
+  // Cycling pool: rebuilt when exhausted
+  if (!sp._pool || sp._pool.length === 0) {
+    const levelVerbs  = VERBS.filter(v => v.level === sp.levelId);
+    const reviewVerbs = sp.levelId > 1
+      ? VERBS.filter(v => v.level < sp.levelId && getMastery(v.id) < 5).slice(0, 5)
+      : [];
+    sp._pool = shuffleArr([...levelVerbs, ...reviewVerbs]);
+  }
+  return _genSprintQ(sp._pool.shift());
+}
 
 function startSprint(levelId) {
-  const levelVerbs  = VERBS.filter(v => v.level === levelId);
-  const reviewVerbs = levelId > 1
-    ? VERBS.filter(v => v.level < levelId && getMastery(v.id) < 5).slice(0, 5)
-    : [];
-  const pool    = shuffleArr([...levelVerbs, ...reviewVerbs]).slice(0, SPRINT_QUESTIONS);
-  const allVerbs = VERBS;
-
-  const questions = pool.map(verb => {
-    const type  = Math.random() < 0.6 ? Q_TYPES.V2_QCM : Q_TYPES.V3_QCM;
-    const field = type === Q_TYPES.V2_QCM ? 'v2' : 'v3';
-    const { choices, correct } = buildChoices(verb, field, allVerbs);
-    return { type, verb, choices, correct,
-      question: type === Q_TYPES.V2_QCM ? 'Prétérit de' : 'Participe passé de',
-      highlight: verb.inf };
-  });
-
   state.mode    = 'sprint';
   state.levelId = levelId;
   state.sprint  = {
-    levelId, questions,
-    currentIndex: 0, correctCount: 0, xpEarned: 0,
-    startTime: Date.now(), finished: false, answered: false, interval: null,
+    levelId, _pool: [],
+    current: null,
+    answered: 0, correctCount: 0, streak: 0, maxStreak: 0, xpEarned: 0,
+    startTime: Date.now(), finished: false, answering: false, interval: null,
   };
+  state.sprint.current = _nextSprintQ();
 
   state.sprint.interval = setInterval(() => {
     const remaining = Math.max(0, SPRINT_TIME - (Date.now() - state.sprint.startTime) / 1000);
@@ -1620,10 +1636,11 @@ function startSprint(levelId) {
 function renderSprint() {
   const sp = state.sprint;
   if (sp.finished) return;
-  const q       = sp.questions[sp.currentIndex];
-  const pct     = Math.round((sp.currentIndex / sp.questions.length) * 100);
+  const q       = sp.current;
   const s       = Math.ceil(Math.max(0, SPRINT_TIME - (Date.now() - sp.startTime) / 1000));
   const letters = ['A', 'B', 'C', 'D'];
+  const streakHTML = sp.streak >= 2 ? `<span class="streak-badge">🔥 ${sp.streak}</span>` : '';
+  const xpNext  = sprintXP(sp.streak + 1);
 
   app().innerHTML = `
     ${renderHeader(`Niveau ${state.levelId} – Sprint`)}
@@ -1632,12 +1649,12 @@ function renderSprint() {
 
       <div class="quiz-header">
         <div class="quiz-progress-bar">
-          <div class="quiz-progress-fill" style="width:${pct}%"></div>
+          <div class="quiz-progress-fill sprint-progress" style="width:${(s / SPRINT_TIME) * 100}%"></div>
         </div>
         <div class="quiz-meta">
-          <span class="quiz-question-num">${sp.currentIndex + 1} / ${sp.questions.length}</span>
+          <span class="quiz-score-live">✅ ${sp.correctCount} ${streakHTML}</span>
           <span class="sprint-timer${s <= 10 ? ' danger' : s <= 20 ? ' warning' : ''}" id="sprint-timer">⏱ ${s}s</span>
-          <span class="quiz-score-live">✅ ${sp.correctCount}</span>
+          <span class="sprint-xp-next">+${xpNext} XP</span>
         </div>
       </div>
 
@@ -1659,10 +1676,10 @@ function renderSprint() {
 
 function handleSprintChoice(btn, value) {
   const sp = state.sprint;
-  if (sp.answered || sp.finished) return;
-  sp.answered = true;
+  if (sp.answering || sp.finished) return;
+  sp.answering = true;
 
-  const q       = sp.questions[sp.currentIndex];
+  const q       = sp.current;
   const isRight = checkAnswer({ questions: [q], currentIndex: 0 }, value);
 
   document.querySelectorAll('.choice-btn').forEach(b => {
@@ -1671,26 +1688,27 @@ function handleSprintChoice(btn, value) {
   });
   if (!isRight) btn.classList.add('wrong');
 
+  sp.answered++;
   if (isRight) {
+    sp.streak++;
+    sp.maxStreak = Math.max(sp.maxStreak, sp.streak);
     sp.correctCount++;
-    const xp = 8;
+    const xp = sprintXP(sp.streak);
     sp.xpEarned += xp;
     addXP(xp);
     updateMastery(q.verb.id, true);
   } else {
+    sp.streak = 0;
     updateMastery(q.verb.id, false);
   }
 
   setTimeout(() => {
-    sp.currentIndex++;
-    sp.answered = false;
-    if (sp.currentIndex >= sp.questions.length) {
-      clearInterval(sp.interval);
-      showSprintResults();
-    } else {
+    sp.answering = false;
+    if (!sp.finished) {
+      sp.current = _nextSprintQ();
       renderSprint();
     }
-  }, 400);
+  }, 350);
 }
 
 function confirmQuitSprint() {
@@ -1708,23 +1726,12 @@ function showSprintResults() {
   sp.finished = true;
   clearInterval(sp.interval);
   state.mode = null;
-
-  const elapsed   = Math.min(SPRINT_TIME, (Date.now() - sp.startTime) / 1000);
-  const remaining = Math.max(0, SPRINT_TIME - elapsed);
-  const answered  = sp.currentIndex;
-  const correct   = sp.correctCount;
-  const accuracy  = answered > 0 ? correct / answered : 0;
-
-  const accuracyBonus = accuracy >= 0.9 ? 30 : accuracy >= 0.7 ? 15 : 0;
-  const timeBonus     = Math.round(remaining);
-  addXP(accuracyBonus + timeBonus);
-  sp.xpEarned += accuracyBonus + timeBonus;
   recordActivity(sp.xpEarned);
 
-  const pct   = answered > 0 ? Math.round((correct / answered) * 100) : 0;
-  const emoji = correct >= 18 ? '🏆' : correct >= 14 ? '🎉' : correct >= 10 ? '👍' : '💪';
-  const title = correct >= 18 ? 'Parfait !' : correct >= 14 ? 'Excellent !' : correct >= 10 ? 'Bien joué !' : 'Continue !';
-  const elapsedFmt = `${Math.floor(elapsed / 60)}:${String(Math.round(elapsed % 60)).padStart(2, '0')}`;
+  const correct  = sp.correctCount;
+  const answered = sp.answered;
+  const emoji = correct >= 30 ? '🏆' : correct >= 20 ? '🎉' : correct >= 12 ? '👍' : '💪';
+  const title = correct >= 30 ? 'Incroyable !' : correct >= 20 ? 'Excellent !' : correct >= 12 ? 'Bien joué !' : 'Continue !';
 
   app().innerHTML = `
     ${renderHeader('Sprint – Résultats')}
@@ -1732,10 +1739,14 @@ function showSprintResults() {
       <div class="results-card">
         <div class="results-emoji">${emoji}</div>
         <div class="results-title">${title}</div>
-        <div class="sprint-result-big">${correct} <span style="font-size:20px;font-weight:500">/ ${answered}</span></div>
-        <div class="results-score-label">bonnes réponses · ⏱ ${elapsedFmt}</div>
+        <div class="sprint-result-big">${correct}</div>
+        <div class="results-score-label">bonnes réponses en ${SPRINT_TIME}s</div>
 
         <div class="results-breakdown">
+          <div class="breakdown-row">
+            <span class="breakdown-label">Questions répondues</span>
+            <span class="breakdown-value">📋 ${answered}</span>
+          </div>
           <div class="breakdown-row">
             <span class="breakdown-label">Bonnes réponses</span>
             <span class="breakdown-value" style="color:var(--green)">✅ ${correct}</span>
@@ -1744,29 +1755,19 @@ function showSprintResults() {
             <span class="breakdown-label">Erreurs</span>
             <span class="breakdown-value" style="color:var(--red)">❌ ${answered - correct}</span>
           </div>
-          ${remaining > 0 ? `
           <div class="breakdown-row">
-            <span class="breakdown-label">Temps restant</span>
-            <span class="breakdown-value">⏱ ${Math.round(remaining)}s</span>
-          </div>` : ''}
+            <span class="breakdown-label">Meilleure série</span>
+            <span class="breakdown-value">🔥 ${sp.maxStreak}</span>
+          </div>
         </div>
 
         <div class="results-breakdown" style="margin-top:8px">
           <div class="breakdown-row" style="font-weight:700;color:var(--purple)">
-            <span>Total XP gagné</span><span>+${sp.xpEarned}</span>
+            <span>XP gagné</span><span>+${sp.xpEarned}</span>
           </div>
-          <div class="breakdown-row">
-            <span class="breakdown-label">Base</span>
-            <span class="breakdown-value">+${correct * 8} XP</span>
+          <div class="breakdown-row" style="font-size:12px;color:var(--muted)">
+            <span>série 1-4 = 5 XP · 5-9 = 8 XP · 10-14 = 12 XP · 15+ = 15 XP</span>
           </div>
-          ${accuracyBonus ? `<div class="breakdown-row">
-            <span class="breakdown-label">Bonus précision</span>
-            <span class="breakdown-value">+${accuracyBonus} XP 🎯</span>
-          </div>` : ''}
-          ${timeBonus ? `<div class="breakdown-row">
-            <span class="breakdown-label">Bonus vitesse</span>
-            <span class="breakdown-value">+${timeBonus} XP ⚡</span>
-          </div>` : ''}
         </div>
 
         <div class="results-btns">
