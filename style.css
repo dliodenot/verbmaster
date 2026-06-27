@@ -922,6 +922,73 @@ body {
   100%       { background: var(--card); border-color: #e0e3ff; transform: translateX(0); }
 }
 
+/* ── HOME ACTION BUTTONS ── */
+.home-action-btns {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+.home-action-btn {
+  padding: 13px 10px;
+  background: var(--card);
+  border: 2px solid #e0e3ff;
+  border-radius: var(--radius);
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: inherit;
+  color: var(--purple);
+  box-shadow: var(--shadow);
+  transition: all .15s;
+}
+.home-action-btn:hover { border-color: var(--purple); background: #f0edff; transform: translateY(-2px); }
+
+/* ── STATS PAGE ── */
+.stats-section-title {
+  font-size: 16px;
+  font-weight: 800;
+  margin-bottom: 12px;
+  color: var(--text);
+}
+.stats-levels-card {
+  background: var(--card);
+  border-radius: var(--radius);
+  padding: 8px 16px;
+  box-shadow: var(--shadow);
+}
+.stats-level-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 0;
+  border-bottom: 1px solid #f0f2ff;
+}
+.stats-level-row:last-child { border-bottom: none; }
+.stats-level-row.locked { opacity: .45; }
+.stats-level-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 110px;
+}
+.stats-level-emoji  { font-size: 18px; }
+.stats-level-name   { font-size: 13px; font-weight: 700; }
+.stats-level-right  { flex: 1; }
+.stats-level-mastery { font-size: 11px; color: var(--muted); font-weight: 600; margin: 3px 0; }
+.stats-mini-bar {
+  height: 5px;
+  background: #e0e3ff;
+  border-radius: 99px;
+  overflow: hidden;
+}
+.stats-mini-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--purple), #a29bfe);
+  border-radius: 99px;
+  transition: width .5s;
+}
+
 /* ── STREAK CALENDAR ── */
 .streak-card {
   background: var(--card);

@@ -297,7 +297,8 @@ function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
 ══════════════════════════════════════════ */
 function renderHome() {
   const totalStars = Object.values(state.save.stars).reduce((a, b) => a + b, 0);
-  const mastered = getTotalMastered();
+  const mastered   = getTotalMastered();
+  const { current: streak } = calcPersonalStreak(state.user?.activityDates || []);
 
   const levelsHTML = LEVELS.map(lv => {
     const verbs = VERBS.filter(v => v.level === lv.id);
@@ -330,25 +331,24 @@ function renderHome() {
 
       <div class="stats-bar">
         <div class="stat-card">
-          <div class="stat-value">${mastered}</div>
-          <div class="stat-label">verbes maîtrisés</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-value">${totalStars}</div>
-          <div class="stat-label">étoiles gagnées</div>
-        </div>
-        <div class="stat-card">
           <div class="stat-value">${state.save.xp}</div>
           <div class="stat-label">points XP</div>
         </div>
+        <div class="stat-card">
+          <div class="stat-value">${totalStars}</div>
+          <div class="stat-label">étoiles</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value">${streak > 0 ? '🔥' : '💤'} ${streak}</div>
+          <div class="stat-label">série en cours</div>
+        </div>
       </div>
 
-      ${state.user ? renderStreakCard() : ''}
-
-      ${state.user ? `
-        <button class="friends-home-btn" onclick="renderFriendsScreen()">
-          👥 Mes amis
-        </button>` : ''}
+      <div class="home-action-btns">
+        ${state.user ? `
+          <button class="home-action-btn" onclick="renderStatsScreen()">📊 Mes stats</button>
+          <button class="home-action-btn" onclick="renderFriendsScreen()">👥 Mes amis</button>
+        ` : ''}</div>
 
       <div class="section-title">📖 Choisis ton niveau</div>
       <div class="levels-grid">${levelsHTML}</div>
@@ -986,6 +986,67 @@ function showMatchingResults() {
           </button>
         </div>
       </div>
+    </div>`;
+}
+
+function renderStatsScreen() {
+  const dates    = state.user?.activityDates || [];
+  const { current, best } = calcPersonalStreak(dates);
+  const mastered   = getTotalMastered();
+  const totalStars = Object.values(state.save.stars).reduce((a, b) => a + b, 0);
+
+  // Progression par niveau
+  const levelsHTML = LEVELS.map(lv => {
+    const verbs      = VERBS.filter(v => v.level === lv.id);
+    const stars      = getStars(lv.id);
+    const masteredLv = verbs.filter(v => getMastery(v.id) >= 3).length;
+    const unlocked   = isLevelUnlocked(lv.id);
+    const pct        = Math.round((masteredLv / verbs.length) * 100);
+    return `
+      <div class="stats-level-row ${unlocked ? '' : 'locked'}">
+        <div class="stats-level-label">
+          <span class="stats-level-emoji">${lv.emoji}</span>
+          <span class="stats-level-name">${lv.name}</span>
+        </div>
+        <div class="stats-level-right">
+          <div class="stars" style="font-size:14px">${starsHTML(stars)}</div>
+          <div class="stats-level-mastery">${masteredLv}/${verbs.length} maîtrisés</div>
+          <div class="stats-mini-bar">
+            <div class="stats-mini-fill" style="width:${unlocked ? pct : 0}%"></div>
+          </div>
+        </div>
+      </div>`;
+  }).join('');
+
+  app().innerHTML = `
+    ${renderHeader('Mes statistiques')}
+    <div class="screen-container" style="padding-bottom:48px">
+      <button class="back-btn" onclick="renderHome()">← Accueil</button>
+      <div class="screen-title">📊 Mes statistiques</div>
+
+      <!-- Chiffres clés -->
+      <div class="stats-bar" style="margin-bottom:20px">
+        <div class="stat-card">
+          <div class="stat-value">${state.save.xp}</div>
+          <div class="stat-label">points XP</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value">${totalStars}</div>
+          <div class="stat-label">étoiles</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value">${mastered}</div>
+          <div class="stat-label">maîtrisés</div>
+        </div>
+      </div>
+
+      <!-- Régularité -->
+      <div class="stats-section-title">🔥 Régularité</div>
+      ${renderStreakCard()}
+
+      <!-- Progression par niveau -->
+      <div class="stats-section-title mt-16">📚 Progression par niveau</div>
+      <div class="stats-levels-card">${levelsHTML}</div>
     </div>`;
 }
 
