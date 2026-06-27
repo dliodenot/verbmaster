@@ -105,7 +105,8 @@ const state = {
   flashcardIndex: 0,
   quiz: null,
   matching: null,
-  user: null,    // { uid, name, photo } quand connecté
+  user: null,             // { uid, name, photo, friendCode, activityDates }
+  pendingInviteCode: null,
 };
 
 function getStars(levelId) { return state.save.stars[levelId] || 0; }
@@ -341,6 +342,11 @@ function renderHome() {
           <div class="stat-label">points XP</div>
         </div>
       </div>
+
+      ${state.user ? `
+        <button class="friends-home-btn" onclick="renderFriendsScreen()">
+          👥 Mes amis
+        </button>` : ''}
 
       <div class="section-title">📖 Choisis ton niveau</div>
       <div class="levels-grid">${levelsHTML}</div>
@@ -686,6 +692,7 @@ function showResults() {
   const correct = quiz.correctCount;
   const pct     = Math.round((correct / total) * 100);
 
+  recordActivity(quiz.xpEarned);
   const earnedStars = pct >= 90 ? 3 : pct >= 65 ? 2 : pct >= 40 ? 1 : 0;
   const newRecord   = setStars(quiz.levelId, earnedStars);
   const nextLevel   = quiz.levelId + 1;
@@ -932,6 +939,7 @@ function showMatchingResults() {
   const attempts  = m.matched + m.errors;
   const accuracy  = attempts > 0 ? Math.round((m.matched / attempts) * 100) : 100;
   const xpEarned  = m.matched * 15;
+  recordActivity(xpEarned);
   const emoji     = m.errors === 0 ? '🏆' : accuracy >= 80 ? '🎉' : accuracy >= 60 ? '👍' : '💪';
   const title     = m.errors === 0 ? 'Parfait, zéro erreur !' : accuracy >= 80 ? 'Excellent !' : 'Bien joué !';
   const subtitle  = `Tu as relié ${m.matched} verbe${m.matched > 1 ? 's' : ''} sur ${m.total} !`;
@@ -977,6 +985,242 @@ function showMatchingResults() {
         </div>
       </div>
     </div>`;
+}
+
+/* ══════════════════════════════════════════
+   FRIENDS
+══════════════════════════════════════════ */
+function todayStr() { return new Date().toISOString().slice(0, 10); }
+
+function recordActivity(xpEarned) {
+  if (!state.user) return;
+  const today = todayStr();
+  if (!state.user.activityDates.includes(today)) state.user.activityDates.push(today);
+  fbUpdateActivity(state.user.uid, xpEarned);
+}
+
+function checkInviteCode() {
+  const params = new URLSearchParams(window.location.search);
+  const code = params.get('invite');
+  if (code) {
+    state.pendingInviteCode = code.toUpperCase();
+    const url = new URL(window.location);
+    url.searchParams.delete('invite');
+    window.history.replaceState({}, '', url);
+  }
+}
+
+function calcSharedStreak(myDates = [], friendDates = []) {
+  const fSet = new Set(friendDates);
+  const shared = [...new Set(myDates.filter(d => fSet.has(d)))].sort().reverse();
+  if (!shared.length) return 0;
+  const today = todayStr();
+  const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
+  if (shared[0] !== today && shared[0] !== yesterday) return 0;
+  let streak = 1;
+  for (let i = 1; i < shared.length; i++) {
+    if ((new Date(shared[i - 1]) - new Date(shared[i])) / 86400000 === 1) streak++;
+    else break;
+  }
+  return streak;
+}
+
+async function renderFriendsScreen() {
+  if (!state.user) { showLoginScreen(); return; }
+
+  app().innerHTML = `
+    ${renderHeader('Amis')}
+    <div class="screen-container">
+      <button class="back-btn" onclick="renderHome()">← Accueil</button>
+      <div style="text-align:center;padding:48px"><div class="spinner"></div></div>
+    </div>`;
+
+  try {
+    const friendships = await fbGetFriendships(state.user.uid);
+    const incoming  = friendships.filter(f => f.status === 'pending' && f.requestedBy !== state.user.uid);
+    const accepted  = friendships.filter(f => f.status === 'accepted');
+
+    const loadFriend = async f => {
+      const fuid = f.uids.find(u => u !== state.user.uid);
+      const data = await fbGetUserPublic(fuid);
+      return { f, data };
+    };
+    const allData = await Promise.all([...incoming, ...accepted].map(loadFriend));
+
+    const incomingHTML = allData
+      .filter(({ f }) => f.status === 'pending')
+      .map(({ f, data }) => {
+        if (!data) return '';
+        return `
+          <div class="friend-card pending-card">
+            <img src="${data.photoURL || ''}" class="friend-avatar" onerror="this.style.display='none'">
+            <div class="friend-info">
+              <div class="friend-name">${data.displayName || 'Ami'}</div>
+              <div class="friend-sub">veut être ton ami !</div>
+            </div>
+            <button class="btn btn-green btn-small" onclick="handleAcceptFriend('${data.uid}')">✓ Accepter</button>
+          </div>`;
+      }).join('');
+
+    const acceptedHTML = allData
+      .filter(({ f }) => f.status === 'accepted')
+      .map(({ data }) => {
+        if (!data) return '';
+        const streak  = calcSharedStreak(state.user.activityDates, data.activityDates || []);
+        const combXP  = (state.save.xp || 0) + (data.xp || 0);
+        const fStars  = Object.values(data.stars || {}).reduce((a, b) => a + b, 0);
+        return `
+          <div class="friend-card">
+            <img src="${data.photoURL || ''}" class="friend-avatar" onerror="this.style.display='none'">
+            <div class="friend-info">
+              <div class="friend-name">${data.displayName || 'Ami'}</div>
+              <div class="friend-stats-row">
+                <span>⭐ ${data.xp || 0} XP</span>
+                <span>★ ${fStars}</span>
+              </div>
+            </div>
+            <div class="friend-right">
+              ${streak > 0 ? `<div class="shared-streak">🔥 ${streak}j</div>` : ''}
+              <div class="combined-xp">🤝 ${combXP} XP</div>
+            </div>
+          </div>`;
+      }).join('');
+
+    app().innerHTML = `
+      ${renderHeader('👥 Amis')}
+      <div class="screen-container">
+        <button class="back-btn" onclick="renderHome()">← Accueil</button>
+        <div class="screen-title">👥 Mes amis</div>
+
+        ${incoming.length ? `<div class="section-title mt-16">🔔 Demandes reçues</div>${incomingHTML}` : ''}
+
+        ${accepted.length
+          ? `<div class="section-title mt-16">🤝 Amis (${accepted.length})</div>${acceptedHTML}`
+          : `<div class="empty-state">
+               <div style="font-size:48px;margin-bottom:12px">👋</div>
+               <p>Pas encore d'amis.<br>Ajoute quelqu'un pour vous comparer !</p>
+             </div>`}
+
+        <button class="btn btn-primary mt-24" onclick="renderAddFriendScreen()">
+          ➕ Ajouter un ami
+        </button>
+      </div>`;
+  } catch (e) {
+    app().innerHTML = `
+      ${renderHeader('Amis')}
+      <div class="screen-container">
+        <button class="back-btn" onclick="renderHome()">← Accueil</button>
+        <p style="color:var(--red);margin-top:24px">Erreur : ${e.message}</p>
+        <button class="btn btn-primary mt-16" onclick="renderFriendsScreen()">Réessayer</button>
+      </div>`;
+  }
+}
+
+async function renderAddFriendScreen() {
+  if (!state.user) { showLoginScreen(); return; }
+
+  // Attendre que le code ami soit prêt si nécessaire
+  if (!state.user.friendCode) {
+    state.user.friendCode = await fbEnsureFriendCode(state.user.uid);
+  }
+
+  const code = state.user.friendCode || '...';
+  const inviteUrl = `https://dliodenot.github.io/verbmaster/?invite=${code}`;
+  const prefill   = state.pendingInviteCode || '';
+  if (prefill) state.pendingInviteCode = null;
+
+  app().innerHTML = `
+    ${renderHeader('Ajouter un ami')}
+    <div class="screen-container">
+      <button class="back-btn" onclick="renderFriendsScreen()">← Amis</button>
+      <div class="screen-title">Ajouter un ami</div>
+
+      <div class="my-code-card">
+        <div class="section-title" style="margin-bottom:12px">Mon code ami</div>
+        <div class="friend-code-display">${code}</div>
+        <div class="code-actions">
+          <button class="btn btn-secondary btn-small" onclick="copyFriendCode('${code}')">📋 Code</button>
+          <button class="btn btn-secondary btn-small" onclick="copyFriendLink('${inviteUrl}')">🔗 Lien</button>
+        </div>
+        <div class="qr-wrap">
+          <div class="qr-label">QR code à scanner</div>
+          <div id="qr-box"></div>
+        </div>
+      </div>
+
+      <div class="section-title mt-24">Entrer le code d'un ami</div>
+      <input type="text" id="friendCodeInput" class="type-in-input friend-code-input"
+             placeholder="ex: ABC123" maxlength="6" value="${prefill}"
+             oninput="this.value=this.value.toUpperCase().replace(/[^A-Z0-9]/g,'')">
+      <button class="btn btn-primary mt-8" style="width:100%" onclick="handleSendFriendRequest()">
+        Envoyer la demande 🤝
+      </button>
+      <div id="friendReqStatus"></div>
+    </div>`;
+
+  if (typeof QRCode !== 'undefined') {
+    new QRCode(document.getElementById('qr-box'), {
+      text: inviteUrl, width: 160, height: 160,
+      colorDark: '#6c5ce7', colorLight: '#ffffff',
+      correctLevel: QRCode.CorrectLevel.M,
+    });
+  }
+  if (prefill) document.getElementById('friendCodeInput')?.focus();
+}
+
+async function handleSendFriendRequest() {
+  const input  = document.getElementById('friendCodeInput');
+  const code   = (input?.value || '').trim().toUpperCase();
+  const status = document.getElementById('friendReqStatus');
+
+  if (code.length !== 6) {
+    status.innerHTML = `<p class="req-error">Le code doit faire 6 caractères.</p>`;
+    return;
+  }
+  status.innerHTML = `<div class="spinner" style="margin:16px auto"></div>`;
+
+  try {
+    const friend = await fbGetUserByCode(code);
+    if (!friend) { status.innerHTML = `<p class="req-error">Code introuvable. Vérifie et réessaie !</p>`; return; }
+    if (friend.uid === state.user.uid) { status.innerHTML = `<p class="req-error">C'est ton propre code 😄</p>`; return; }
+
+    const existing = await fbGetFriendship(state.user.uid, friend.uid);
+    if (existing) {
+      status.innerHTML = existing.status === 'accepted'
+        ? `<p class="req-ok">Vous êtes déjà amis ! 🎉</p>`
+        : `<p class="req-warn">Demande déjà envoyée ⏳</p>`;
+      return;
+    }
+
+    await fbSendFriendRequest(state.user.uid, friend.uid);
+    status.innerHTML = `
+      <div class="feedback-bar correct mt-16">
+        <span class="fb-icon">🎉</span>
+        <div>Demande envoyée à <strong>${friend.displayName || 'ton ami'}</strong> !</div>
+      </div>`;
+    if (input) input.value = '';
+  } catch (e) {
+    status.innerHTML = `<p class="req-error">Erreur : ${e.message}</p>`;
+  }
+}
+
+async function handleAcceptFriend(friendUid) {
+  try {
+    await fbAcceptFriendRequest(state.user.uid, friendUid);
+    renderFriendsScreen();
+  } catch (e) { alert('Erreur : ' + e.message); }
+}
+
+function copyFriendCode(code) {
+  navigator.clipboard.writeText(code)
+    .then(() => alert(`Code copié : ${code} 📋`))
+    .catch(() => alert(`Ton code : ${code}`));
+}
+
+function copyFriendLink(url) {
+  navigator.clipboard.writeText(url)
+    .then(() => alert('Lien d\'invitation copié ! 🔗'))
+    .catch(() => alert(`Lien : ${url}`));
 }
 
 /* ══════════════════════════════════════════
@@ -1048,14 +1292,24 @@ function mergeRemoteState(remote) {
 }
 
 function initApp() {
+  checkInviteCode();
   if (FIREBASE_READY) renderLoading();
 
   fbOnAuthChange(async user => {
     if (user) {
-      state.user = { uid: user.uid, name: user.displayName, photo: user.photoURL };
+      state.user = { uid: user.uid, name: user.displayName, photo: user.photoURL,
+                     friendCode: null, activityDates: [] };
       const remote = await fbLoad(user.uid);
-      if (remote) mergeRemoteState(remote);
-      else saveState(); // première connexion → pousse les données locales
+      if (remote) {
+        mergeRemoteState(remote);
+        state.user.activityDates = remote.activityDates || [];
+      } else {
+        saveState();
+      }
+      // Génère le code ami si pas encore fait, sauvegarde le profil Google
+      fbInitUserProfile(user.uid, user.displayName, user.photoURL).then(code => {
+        state.user.friendCode = code;
+      });
     } else {
       state.user = null;
     }
