@@ -388,7 +388,7 @@ function loadState() {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (raw) return JSON.parse(raw);
   } catch (_) {}
-  return { xp: 0, stars: {}, mastery: {} };
+  return { xp: 0, stars: {}, mastery: {}, sprintBest: {} };
 }
 
 function saveState() {
@@ -737,6 +737,7 @@ function renderLevelMenu(levelId) {
   const lv = LEVELS[levelId - 1];
   const stars = getStars(levelId);
   const verbs = VERBS.filter(v => v.level === levelId);
+  const myBest = state.save.sprintBest?.[levelId];
 
   app().innerHTML = `
     ${renderHeader(`Niveau ${levelId} – ${lv.name}`)}
@@ -776,7 +777,9 @@ function renderLevelMenu(levelId) {
         <div class="mode-icon">⚡</div>
         <div class="mode-name">Sprint <span class="sprint-badge">60s · questions infinies</span></div>
         <div class="mode-desc">Enchaîne les bonnes réponses – plus la série est longue, plus tu gagnes d'XP !</div>
+        ${myBest ? `<div class="sprint-pb">🏅 Record : <strong>${myBest.score}</strong> bonnes · 🔥 série <strong>${myBest.streak}</strong></div>` : ''}
       </div>
+      <div id="sprint-lb-${levelId}" class="sprint-lb-wrap"></div>
 
       <div class="section-title mt-24">📋 Liste des verbes</div>
       <div class="verb-table-wrap">
@@ -809,6 +812,54 @@ function renderLevelMenu(levelId) {
         </table>
       </div>
     </div>`;
+  loadSprintLeaderboard(levelId);
+}
+
+async function loadSprintLeaderboard(levelId) {
+  const el = document.getElementById(`sprint-lb-${levelId}`);
+  if (!el) return;
+  if (!state.user || !FIREBASE_READY) return;
+
+  try {
+    const friendships = await fbGetFriendships(state.user.uid);
+    const accepted = friendships.filter(f => f.status === 'accepted');
+    const friendDocs = await Promise.all(
+      accepted.map(f => fbGetUserPublic(f.uids.find(u => u !== state.user.uid)))
+    );
+
+    const myBest = state.save.sprintBest?.[levelId] || { score: 0, streak: 0 };
+    const entries = [
+      { name: state.user.name || 'Moi', photo: state.user.photo, isMe: true,
+        score: myBest.score, streak: myBest.streak },
+      ...friendDocs.filter(Boolean).map(fd => ({
+        name: fd.displayName || 'Ami', photo: fd.photoURL, isMe: false,
+        score:  fd.sprintBest?.[levelId]?.score  || 0,
+        streak: fd.sprintBest?.[levelId]?.streak || 0,
+      })),
+    ].filter(e => e.score > 0).sort((a, b) => b.score - a.score || b.streak - a.streak);
+
+    if (!el || !document.getElementById(`sprint-lb-${levelId}`)) return;
+    if (entries.length === 0) return;
+
+    const myRank = entries.findIndex(e => e.isMe) + 1;
+    const top5   = entries.slice(0, 5);
+
+    el.innerHTML = `
+      <div class="sprint-lb-card">
+        <div class="sprint-lb-title">🏆 Classement Sprint – Niveau ${levelId}</div>
+        ${top5.map((e, i) => `
+          <div class="sprint-lb-row${e.isMe ? ' sprint-lb-me' : ''}">
+            <span class="sprint-lb-rank">${i + 1}</span>
+            ${e.photo ? `<img src="${e.photo}" class="sprint-lb-avatar" referrerpolicy="no-referrer">` : '<span class="sprint-lb-avatar sprint-lb-avatar-ph"></span>'}
+            <span class="sprint-lb-name">${e.name}${e.isMe ? ' <span class="sprint-lb-me-tag">moi</span>' : ''}</span>
+            <span class="sprint-lb-score">✅ ${e.score}</span>
+            <span class="sprint-lb-streak">🔥 ${e.streak}</span>
+          </div>`).join('')}
+        ${myRank > 5 ? `<div class="sprint-lb-mypos">Ta position : #${myRank} · ✅ ${myBest.score} · 🔥 ${myBest.streak}</div>` : ''}
+      </div>`;
+  } catch (e) {
+    console.warn('Sprint leaderboard:', e);
+  }
 }
 
 /* ══════════════════════════════════════════
@@ -1728,6 +1779,15 @@ function showSprintResults() {
   state.mode = null;
   recordActivity(sp.xpEarned);
 
+  if (!state.save.sprintBest) state.save.sprintBest = {};
+  const _prevBest = state.save.sprintBest[sp.levelId] || { score: 0, streak: 0 };
+  const _newBest  = { score: Math.max(_prevBest.score, sp.correctCount), streak: Math.max(_prevBest.streak, sp.maxStreak) };
+  if (_newBest.score !== _prevBest.score || _newBest.streak !== _prevBest.streak) {
+    state.save.sprintBest[sp.levelId] = _newBest;
+    saveState();
+    if (state.user) fbSave(state.user.uid, state.save);
+  }
+
   const correct  = sp.correctCount;
   const answered = sp.answered;
   const emoji = correct >= 30 ? '🏆' : correct >= 20 ? '🎉' : correct >= 12 ? '👍' : '💪';
@@ -2549,6 +2609,14 @@ function mergeRemoteState(remote) {
   });
   Object.entries(remote.mastery || {}).forEach(([k, v]) => {
     state.save.mastery[k] = Math.max(state.save.mastery[k] || 0, v);
+  });
+  if (!state.save.sprintBest) state.save.sprintBest = {};
+  Object.entries(remote.sprintBest || {}).forEach(([k, v]) => {
+    const cur = state.save.sprintBest[k] || { score: 0, streak: 0 };
+    state.save.sprintBest[k] = {
+      score:  Math.max(cur.score,  v.score  || 0),
+      streak: Math.max(cur.streak, v.streak || 0),
+    };
   });
   saveState();
 }
