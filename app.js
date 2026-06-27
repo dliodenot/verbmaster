@@ -1637,12 +1637,15 @@ function sprintXP(streak) {
 
 // Génère une question V2_QCM ou V3_QCM pour le sprint
 function _genSprintQ(verb) {
-  const type  = Math.random() < 0.6 ? Q_TYPES.V2_QCM : Q_TYPES.V3_QCM;
-  const field = type === Q_TYPES.V2_QCM ? 'v2' : 'v3';
-  const { choices, correct } = buildChoices(verb, field, VERBS);
-  return { type, verb, choices, correct,
-    question: type === Q_TYPES.V2_QCM ? 'Prétérit de' : 'Participe passé de',
-    highlight: verb.inf };
+  const correct = `${verb.v2} / ${verb.v3}`;
+  const distractors = pickRandom(
+    VERBS.filter(v => v.id !== verb.id && `${v.v2} / ${v.v3}` !== correct),
+    3,
+  ).map(v => `${v.v2} / ${v.v3}`);
+  const choices = [correct, ...distractors].sort(() => Math.random() - 0.5);
+  return { type: 'V2V3', verb, choices, correct,
+    question: 'Prétérit & participe passé de',
+    highlight: `to ${verb.inf}` };
 }
 
 function _nextSprintQ() {
@@ -1712,7 +1715,7 @@ function renderSprint() {
       </div>
 
       <div class="question-card">
-        <div class="question-type-label">${q.type === Q_TYPES.V2_QCM ? '📝 Prétérit' : '📝 Participe passé'}</div>
+        <div class="question-type-label">📝 Prétérit &amp; participe passé</div>
         <div class="question-text">
           ${q.question} <span style="color:var(--purple)">${q.highlight}</span> ?
         </div>
@@ -1783,7 +1786,7 @@ function showSprintResults() {
   if (!state.save.sprintBest) state.save.sprintBest = {};
   const _prevBest    = state.save.sprintBest[sp.levelId] || { score: 0, streak: 0 };
   const _isNewRecord = sp.correctCount > _prevBest.score;
-  const _combo20     = sp.maxStreak >= 20;
+  const _combo20     = sp.maxStreak >= 30;
   sp.xpEarned = _isNewRecord ? sp.correctCount * (_combo20 ? 2 : 1) : 0;
   recordActivity(sp.xpEarned);
 
@@ -1836,7 +1839,7 @@ function showSprintResults() {
             ? `<div class="breakdown-row" style="font-weight:700;color:var(--purple)">
                 <span>🏅 Nouveau record !</span><span>+${sp.xpEarned} XP${_combo20 ? ' <span class="sprint-x2-badge">×2</span>' : ''}</span>
                </div>
-               ${_combo20 ? `<div class="breakdown-row" style="font-size:12px;color:#e17055;font-weight:600"><span>🔥 Combo 20+ débloqué – XP doublé !</span></div>` : ''}`
+               ${_combo20 ? `<div class="breakdown-row" style="font-size:12px;color:#e17055;font-weight:600"><span>🔥 Combo 30+ débloqué – XP doublé !</span></div>` : ''}`
             : `<div class="breakdown-row" style="font-size:13px;color:var(--muted)">
                 <span>Pas de nouveau record – 0 XP</span><span>Record : ${_prevBest.score} bonnes</span>
                </div>`}
