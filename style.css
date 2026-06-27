@@ -1038,9 +1038,10 @@ body {
 }
 .cal-week-header {
   display: grid;
-  grid-template-columns: repeat(7, 1fr);
+  grid-template-columns: repeat(7, 26px);
   gap: 4px;
   margin-bottom: 4px;
+  justify-content: center;
 }
 .cal-week-header span {
   text-align: center;
