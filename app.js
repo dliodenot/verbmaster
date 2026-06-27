@@ -343,6 +343,8 @@ function renderHome() {
         </div>
       </div>
 
+      ${state.user ? renderStreakCard() : ''}
+
       ${state.user ? `
         <button class="friends-home-btn" onclick="renderFriendsScreen()">
           👥 Mes amis
@@ -991,6 +993,91 @@ function showMatchingResults() {
    FRIENDS
 ══════════════════════════════════════════ */
 function todayStr() { return new Date().toISOString().slice(0, 10); }
+
+function calcPersonalStreak(dates = []) {
+  if (!dates.length) return { current: 0, best: 0 };
+  const sorted = [...new Set(dates)].sort().reverse(); // newest first
+  const today     = todayStr();
+  const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
+
+  // Série en cours (doit inclure aujourd'hui ou hier)
+  let current = 0;
+  if (sorted[0] === today || sorted[0] === yesterday) {
+    current = 1;
+    for (let i = 1; i < sorted.length; i++) {
+      if ((new Date(sorted[i - 1]) - new Date(sorted[i])) / 86400000 === 1) current++;
+      else break;
+    }
+  }
+
+  // Meilleure série (scan complet)
+  const asc = [...sorted].reverse();
+  let best = asc.length ? 1 : 0, run = 1;
+  for (let i = 1; i < asc.length; i++) {
+    if ((new Date(asc[i]) - new Date(asc[i - 1])) / 86400000 === 1) { run++; if (run > best) best = run; }
+    else run = 1;
+  }
+
+  return { current, best };
+}
+
+function renderStreakCard() {
+  const dates   = state.user?.activityDates || [];
+  const { current, best } = calcPersonalStreak(dates);
+  const activeSet = new Set(dates);
+
+  // 35 derniers jours (5 semaines)
+  const todayDate = new Date(); todayDate.setHours(0, 0, 0, 0);
+  const cells = Array.from({ length: 35 }, (_, i) => {
+    const d = new Date(todayDate); d.setDate(d.getDate() - (34 - i));
+    const str = d.toISOString().slice(0, 10);
+    return { str, isToday: i === 34, active: activeSet.has(str) };
+  });
+
+  // Décalage : quel jour de semaine (Lun=0) commence la grille ?
+  const firstDay = new Date(todayDate); firstDay.setDate(firstDay.getDate() - 34);
+  const offset   = (firstDay.getDay() + 6) % 7;
+
+  const gridHTML = [
+    ...Array(offset).fill('<div class="cal-day empty"></div>'),
+    ...cells.map(c => `<div class="cal-day${c.active ? ' active' : ''}${c.isToday ? ' today' : ''}" title="${c.str}"></div>`),
+  ].join('');
+
+  const streakEmoji = current === 0 ? '💤' : current < 3 ? '✨' : current < 7 ? '⚡' : '🔥';
+  const streakMsg   = current === 0
+    ? 'Reviens aujourd\'hui pour lancer ta série !'
+    : current === 1 ? 'C\'est parti ! Reviens demain 💪'
+    : `${current} jour${current > 1 ? 's' : ''} d'affilée, continue !`;
+
+  return `
+    <div class="streak-card">
+      <div class="streak-card-title">📅 Ma régularité</div>
+
+      <div class="streak-stats-row">
+        <div class="streak-stat-block">
+          <div class="streak-big-num">${streakEmoji} ${current}</div>
+          <div class="streak-stat-label">Série en cours</div>
+        </div>
+        <div class="streak-sep"></div>
+        <div class="streak-stat-block">
+          <div class="streak-big-num">🏆 ${best}</div>
+          <div class="streak-stat-label">Meilleure série</div>
+        </div>
+      </div>
+
+      <p class="streak-msg">${streakMsg}</p>
+
+      <div class="cal-week-header">
+        ${['L','M','M','J','V','S','D'].map(l => `<span>${l}</span>`).join('')}
+      </div>
+      <div class="cal-grid">${gridHTML}</div>
+
+      <div class="cal-legend">
+        <span class="cal-legend-dot"></span> Pas d'exercice &nbsp;
+        <span class="cal-legend-dot active"></span> Exercice fait !
+      </div>
+    </div>`;
+}
 
 function recordActivity(xpEarned) {
   if (!state.user) return;

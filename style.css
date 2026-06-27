@@ -922,6 +922,101 @@ body {
   100%       { background: var(--card); border-color: #e0e3ff; transform: translateX(0); }
 }
 
+/* ── STREAK CALENDAR ── */
+.streak-card {
+  background: var(--card);
+  border-radius: var(--radius);
+  padding: 20px 18px 16px;
+  box-shadow: var(--shadow);
+  margin-bottom: 16px;
+}
+.streak-card-title {
+  font-size: 15px;
+  font-weight: 800;
+  margin-bottom: 16px;
+  color: var(--text);
+}
+.streak-stats-row {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 0;
+  margin-bottom: 10px;
+}
+.streak-stat-block { flex: 1; text-align: center; }
+.streak-sep {
+  width: 1px;
+  height: 44px;
+  background: #e0e3ff;
+  margin: 0 8px;
+}
+.streak-big-num {
+  font-size: 30px;
+  font-weight: 900;
+  color: var(--purple);
+  line-height: 1.1;
+}
+.streak-stat-label {
+  font-size: 11px;
+  color: var(--muted);
+  font-weight: 600;
+  margin-top: 2px;
+}
+.streak-msg {
+  text-align: center;
+  font-size: 13px;
+  color: var(--muted);
+  font-weight: 600;
+  margin-bottom: 16px;
+}
+.cal-week-header {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+  margin-bottom: 4px;
+}
+.cal-week-header span {
+  text-align: center;
+  font-size: 10px;
+  font-weight: 800;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: .5px;
+}
+.cal-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+}
+.cal-day {
+  aspect-ratio: 1;
+  border-radius: 6px;
+  background: #f0f2ff;
+  transition: transform .1s;
+}
+.cal-day.empty   { background: transparent; }
+.cal-day.active  { background: var(--purple); }
+.cal-day.today   { outline: 2.5px solid var(--purple); outline-offset: 1px; }
+.cal-day.active.today { background: var(--purple); outline-color: var(--green); }
+.cal-legend {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin-top: 10px;
+  font-size: 11px;
+  color: var(--muted);
+  font-weight: 600;
+}
+.cal-legend-dot {
+  display: inline-block;
+  width: 10px; height: 10px;
+  border-radius: 3px;
+  background: #f0f2ff;
+  vertical-align: middle;
+}
+.cal-legend-dot.active { background: var(--purple); }
+
 /* ── FRIENDS ── */
 .friends-home-btn {
   width: 100%;
