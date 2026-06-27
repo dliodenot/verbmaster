@@ -2353,7 +2353,7 @@ function renderStatsScreen() {
 /* ══════════════════════════════════════════
    FRIENDS
 ══════════════════════════════════════════ */
-function todayStr() { return new Date().toISOString().slice(0, 10); }
+function todayStr() { const d = new Date(); return [d.getFullYear(), String(d.getMonth()+1).padStart(2,'0'), String(d.getDate()).padStart(2,'0')].join('-'); }
 
 function calcPersonalStreak(dates = []) {
   if (!dates.length) return { current: 0, best: 0 };
@@ -2387,11 +2387,12 @@ function renderStreakCard() {
   const { current, best } = calcPersonalStreak(dates);
   const activeSet = new Set(dates);
 
-  // 35 derniers jours (5 semaines)
-  const todayDate = new Date(); todayDate.setHours(0, 0, 0, 0);
+  // 35 derniers jours (5 semaines) — dates locales pour correspondre à todayStr()
+  const localStr = d => [d.getFullYear(), String(d.getMonth()+1).padStart(2,'0'), String(d.getDate()).padStart(2,'0')].join('-');
+  const todayDate = new Date();
   const cells = Array.from({ length: 35 }, (_, i) => {
     const d = new Date(todayDate); d.setDate(d.getDate() - (34 - i));
-    const str = d.toISOString().slice(0, 10);
+    const str = localStr(d);
     return { str, isToday: i === 34, active: activeSet.has(str) };
   });
 
