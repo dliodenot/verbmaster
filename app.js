@@ -2412,11 +2412,15 @@ function renderStreakCard() {
   // Libellé du mois affiché
   const first = new Date(refDate); first.setDate(first.getDate() - 34);
   const last  = new Date(refDate);
-  const monthLabel = first.getMonth() === last.getMonth() && first.getFullYear() === last.getFullYear()
+  // Si le premier mois a < 7 jours dans la fenêtre, on l'ignore dans le libellé
+  const firstMonthEnd = new Date(first.getFullYear(), first.getMonth() + 1, 0);
+  const daysOfFirstMonth = Math.min((firstMonthEnd - first) / 86400000 + 1, 35);
+  const labelFirst = daysOfFirstMonth < 7 ? new Date(first.getFullYear(), first.getMonth() + 1, 1) : first;
+  const monthLabel = labelFirst.getMonth() === last.getMonth() && labelFirst.getFullYear() === last.getFullYear()
     ? `${MONTHS[last.getMonth()]} ${last.getFullYear()}`
-    : first.getFullYear() !== last.getFullYear()
-    ? `${MONTHS[first.getMonth()]} ${first.getFullYear()} – ${MONTHS[last.getMonth()]} ${last.getFullYear()}`
-    : `${MONTHS[first.getMonth()]} – ${MONTHS[last.getMonth()]} ${last.getFullYear()}`;
+    : labelFirst.getFullYear() !== last.getFullYear()
+    ? `${MONTHS[labelFirst.getMonth()]} ${labelFirst.getFullYear()} – ${MONTHS[last.getMonth()]} ${last.getFullYear()}`
+    : `${MONTHS[labelFirst.getMonth()]} – ${MONTHS[last.getMonth()]} ${last.getFullYear()}`;
 
   // Décalage grille (Lun=0)
   const gridOffset = (first.getDay() + 6) % 7;
