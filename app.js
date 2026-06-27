@@ -2396,7 +2396,7 @@ function renderStreakCard() {
   const activeSet = new Set(dates);
 
   const localStr = d => [d.getFullYear(), String(d.getMonth()+1).padStart(2,'0'), String(d.getDate()).padStart(2,'0')].join('-');
-  const MONTHS = ['Janv','Févr','Mars','Avr','Mai','Juin','Juil','Août','Sept','Oct','Déc'];
+  const MONTHS = ['Janv','Févr','Mars','Avr','Mai','Juin','Juil','Août','Sept','Oct','Nov','Déc'];
 
   // Fenêtre de 35 jours décalée
   const refDate = new Date();
