@@ -1303,6 +1303,24 @@ body {
   color: #636e72;
 }
 
+/* ── Sprint ── */
+.sprint-card { background: linear-gradient(135deg, #fdcb6e22, #e1705522); border: 2px solid #e17055; }
+.sprint-badge {
+  font-size: 11px; font-weight: 600; color: #e17055;
+  background: #fff3f0; padding: 2px 8px; border-radius: 10px; margin-left: 8px; vertical-align: middle;
+}
+.sprint-timer {
+  font-size: 16px; font-weight: 800; color: var(--green);
+  background: #f0fff6; padding: 3px 10px; border-radius: 10px;
+}
+.sprint-timer.warning { color: #e17055; background: #fff3f0; }
+.sprint-timer.danger  {
+  color: var(--red); background: #fff0f0;
+  animation: pulse 0.6s ease-in-out infinite;
+}
+@keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: .5; } }
+.sprint-result-big { font-size: 52px; font-weight: 900; color: var(--purple); line-height: 1; margin: 8px 0 4px; }
+
 /* Responsiveness */
 @media (max-width: 480px) {
   .choices { grid-template-columns: 1fr; }

@@ -772,6 +772,11 @@ function renderLevelMenu(levelId) {
           <div class="mode-desc">Choisis le bon verbe dans la phrase</div>
         </div>
       </div>
+      <div class="mode-card mode-card-wide mt-8 sprint-card" onclick="startSprint(${levelId})">
+        <div class="mode-icon">⚡</div>
+        <div class="mode-name">Sprint <span class="sprint-badge">${SPRINT_QUESTIONS} questions · ${SPRINT_TIME}s</span></div>
+        <div class="mode-desc">Réponds le plus vite possible – bonus XP pour la vitesse !</div>
+      </div>
 
       <div class="section-title mt-24">📋 Liste des verbes</div>
       <div class="verb-table-wrap">
@@ -1558,6 +1563,215 @@ function showFillBlankResults() {
         <div class="results-btns">
           <button class="btn btn-primary" onclick="startFillBlank(${fb.levelId})">🔄 Réessayer</button>
           <button class="btn btn-secondary" onclick="renderLevelMenu(${fb.levelId})">← Niveau ${fb.levelId}</button>
+          <button class="btn btn-secondary" onclick="renderHome()">🏠 Accueil</button>
+        </div>
+      </div>
+    </div>`;
+}
+
+/* ══════════════════════════════════════════
+   SPRINT MODE
+══════════════════════════════════════════ */
+const SPRINT_QUESTIONS = 20;
+const SPRINT_TIME      = 60; // secondes
+
+function startSprint(levelId) {
+  const levelVerbs  = VERBS.filter(v => v.level === levelId);
+  const reviewVerbs = levelId > 1
+    ? VERBS.filter(v => v.level < levelId && getMastery(v.id) < 5).slice(0, 5)
+    : [];
+  const pool    = shuffleArr([...levelVerbs, ...reviewVerbs]).slice(0, SPRINT_QUESTIONS);
+  const allVerbs = VERBS;
+
+  const questions = pool.map(verb => {
+    const type  = Math.random() < 0.6 ? Q_TYPES.V2_QCM : Q_TYPES.V3_QCM;
+    const field = type === Q_TYPES.V2_QCM ? 'v2' : 'v3';
+    const { choices, correct } = buildChoices(verb, field, allVerbs);
+    return { type, verb, choices, correct,
+      question: type === Q_TYPES.V2_QCM ? 'Prétérit de' : 'Participe passé de',
+      highlight: verb.inf };
+  });
+
+  state.mode    = 'sprint';
+  state.levelId = levelId;
+  state.sprint  = {
+    levelId, questions,
+    currentIndex: 0, correctCount: 0, xpEarned: 0,
+    startTime: Date.now(), finished: false, answered: false, interval: null,
+  };
+
+  state.sprint.interval = setInterval(() => {
+    const remaining = Math.max(0, SPRINT_TIME - (Date.now() - state.sprint.startTime) / 1000);
+    const el = document.getElementById('sprint-timer');
+    if (el) {
+      const s = Math.ceil(remaining);
+      el.textContent = `⏱ ${s}s`;
+      el.className   = `sprint-timer${s <= 10 ? ' danger' : s <= 20 ? ' warning' : ''}`;
+    }
+    if (remaining <= 0 && !state.sprint.finished) {
+      clearInterval(state.sprint.interval);
+      showSprintResults();
+    }
+  }, 100);
+
+  renderSprint();
+}
+
+function renderSprint() {
+  const sp = state.sprint;
+  if (sp.finished) return;
+  const q       = sp.questions[sp.currentIndex];
+  const pct     = Math.round((sp.currentIndex / sp.questions.length) * 100);
+  const s       = Math.ceil(Math.max(0, SPRINT_TIME - (Date.now() - sp.startTime) / 1000));
+  const letters = ['A', 'B', 'C', 'D'];
+
+  app().innerHTML = `
+    ${renderHeader(`Niveau ${state.levelId} – Sprint`)}
+    <div class="screen-container">
+      <button class="back-btn" onclick="confirmQuitSprint()">← Quitter</button>
+
+      <div class="quiz-header">
+        <div class="quiz-progress-bar">
+          <div class="quiz-progress-fill" style="width:${pct}%"></div>
+        </div>
+        <div class="quiz-meta">
+          <span class="quiz-question-num">${sp.currentIndex + 1} / ${sp.questions.length}</span>
+          <span class="sprint-timer${s <= 10 ? ' danger' : s <= 20 ? ' warning' : ''}" id="sprint-timer">⏱ ${s}s</span>
+          <span class="quiz-score-live">✅ ${sp.correctCount}</span>
+        </div>
+      </div>
+
+      <div class="question-card">
+        <div class="question-type-label">${q.type === Q_TYPES.V2_QCM ? '📝 Prétérit' : '📝 Participe passé'}</div>
+        <div class="question-text">
+          ${q.question} <span style="color:var(--purple)">${q.highlight}</span> ?
+        </div>
+      </div>
+
+      <div class="choices">
+        ${q.choices.map((c, i) => `
+          <button class="choice-btn" onclick="handleSprintChoice(this,'${escapeQuote(c)}')" data-val="${escapeAttr(c)}">
+            <span class="choice-letter">${letters[i]}</span>${c}
+          </button>`).join('')}
+      </div>
+    </div>`;
+}
+
+function handleSprintChoice(btn, value) {
+  const sp = state.sprint;
+  if (sp.answered || sp.finished) return;
+  sp.answered = true;
+
+  const q       = sp.questions[sp.currentIndex];
+  const isRight = checkAnswer({ questions: [q], currentIndex: 0 }, value);
+
+  document.querySelectorAll('.choice-btn').forEach(b => {
+    b.disabled = true;
+    if (b.dataset.val === q.correct) b.classList.add('correct');
+  });
+  if (!isRight) btn.classList.add('wrong');
+
+  if (isRight) {
+    sp.correctCount++;
+    const xp = 8;
+    sp.xpEarned += xp;
+    addXP(xp);
+    updateMastery(q.verb.id, true);
+  } else {
+    updateMastery(q.verb.id, false);
+  }
+
+  setTimeout(() => {
+    sp.currentIndex++;
+    sp.answered = false;
+    if (sp.currentIndex >= sp.questions.length) {
+      clearInterval(sp.interval);
+      showSprintResults();
+    } else {
+      renderSprint();
+    }
+  }, 400);
+}
+
+function confirmQuitSprint() {
+  if (confirm('Abandonner le sprint ?')) {
+    clearInterval(state.sprint?.interval);
+    state.sprint = null;
+    state.mode   = null;
+    renderLevelMenu(state.levelId);
+  }
+}
+
+function showSprintResults() {
+  const sp = state.sprint;
+  if (sp.finished) return;
+  sp.finished = true;
+  clearInterval(sp.interval);
+  state.mode = null;
+
+  const elapsed   = Math.min(SPRINT_TIME, (Date.now() - sp.startTime) / 1000);
+  const remaining = Math.max(0, SPRINT_TIME - elapsed);
+  const answered  = sp.currentIndex;
+  const correct   = sp.correctCount;
+  const accuracy  = answered > 0 ? correct / answered : 0;
+
+  const accuracyBonus = accuracy >= 0.9 ? 30 : accuracy >= 0.7 ? 15 : 0;
+  const timeBonus     = Math.round(remaining);
+  addXP(accuracyBonus + timeBonus);
+  sp.xpEarned += accuracyBonus + timeBonus;
+  recordActivity(sp.xpEarned);
+
+  const pct   = answered > 0 ? Math.round((correct / answered) * 100) : 0;
+  const emoji = correct >= 18 ? '🏆' : correct >= 14 ? '🎉' : correct >= 10 ? '👍' : '💪';
+  const title = correct >= 18 ? 'Parfait !' : correct >= 14 ? 'Excellent !' : correct >= 10 ? 'Bien joué !' : 'Continue !';
+  const elapsedFmt = `${Math.floor(elapsed / 60)}:${String(Math.round(elapsed % 60)).padStart(2, '0')}`;
+
+  app().innerHTML = `
+    ${renderHeader('Sprint – Résultats')}
+    <div class="screen-container">
+      <div class="results-card">
+        <div class="results-emoji">${emoji}</div>
+        <div class="results-title">${title}</div>
+        <div class="sprint-result-big">${correct} <span style="font-size:20px;font-weight:500">/ ${answered}</span></div>
+        <div class="results-score-label">bonnes réponses · ⏱ ${elapsedFmt}</div>
+
+        <div class="results-breakdown">
+          <div class="breakdown-row">
+            <span class="breakdown-label">Bonnes réponses</span>
+            <span class="breakdown-value" style="color:var(--green)">✅ ${correct}</span>
+          </div>
+          <div class="breakdown-row">
+            <span class="breakdown-label">Erreurs</span>
+            <span class="breakdown-value" style="color:var(--red)">❌ ${answered - correct}</span>
+          </div>
+          ${remaining > 0 ? `
+          <div class="breakdown-row">
+            <span class="breakdown-label">Temps restant</span>
+            <span class="breakdown-value">⏱ ${Math.round(remaining)}s</span>
+          </div>` : ''}
+        </div>
+
+        <div class="results-breakdown" style="margin-top:8px">
+          <div class="breakdown-row" style="font-weight:700;color:var(--purple)">
+            <span>Total XP gagné</span><span>+${sp.xpEarned}</span>
+          </div>
+          <div class="breakdown-row">
+            <span class="breakdown-label">Base</span>
+            <span class="breakdown-value">+${correct * 8} XP</span>
+          </div>
+          ${accuracyBonus ? `<div class="breakdown-row">
+            <span class="breakdown-label">Bonus précision</span>
+            <span class="breakdown-value">+${accuracyBonus} XP 🎯</span>
+          </div>` : ''}
+          ${timeBonus ? `<div class="breakdown-row">
+            <span class="breakdown-label">Bonus vitesse</span>
+            <span class="breakdown-value">+${timeBonus} XP ⚡</span>
+          </div>` : ''}
+        </div>
+
+        <div class="results-btns">
+          <button class="btn btn-primary" onclick="startSprint(${sp.levelId})">🔄 Rejouer</button>
+          <button class="btn btn-secondary" onclick="renderLevelMenu(${sp.levelId})">← Niveau ${sp.levelId}</button>
           <button class="btn btn-secondary" onclick="renderHome()">🏠 Accueil</button>
         </div>
       </div>
