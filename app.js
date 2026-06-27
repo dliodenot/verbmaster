@@ -388,7 +388,7 @@ function loadState() {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (raw) return JSON.parse(raw);
   } catch (_) {}
-  return { xp: 0, stars: {}, mastery: {}, sprintBest: {} };
+  return { xp: 0, stars: {}, mastery: {}, sprintBest: {}, bossComplete: {}, bossScore: {}, bossSprintBest: {} };
 }
 
 function saveState() {
@@ -432,6 +432,9 @@ function updateMastery(verbId, correct, max = 5) {
 function isChapterComplete(chapterId) {
   return LEVELS.filter(l => l.chapter === chapterId).every(l => getStars(l.id) >= 3);
 }
+function isBossComplete(chapterId) {
+  return state.save.bossComplete?.[chapterId] === true;
+}
 
 function isLevelUnlocked(levelId) {
   if (levelId === 1) return true;
@@ -439,7 +442,7 @@ function isLevelUnlocked(levelId) {
   const chapterLevels = LEVELS.filter(l => l.chapter === level.chapter).map(l => l.id);
   const firstOfChapter = Math.min(...chapterLevels);
   if (levelId === firstOfChapter) {
-    return isChapterComplete(level.chapter - 1);
+    return isBossComplete(level.chapter - 1);
   }
   // Within a chapter: need 2 stars on previous level
   return getStars(levelId - 1) >= 2;
@@ -633,8 +636,9 @@ function renderHome() {
   const { current: streak } = calcPersonalStreak(state.user?.activityDates || []);
 
   const chaptersHTML = CHAPTERS.map(ch => {
-    const chLocked = ch.id > 1 && !isChapterComplete(ch.id - 1);
-    const chDone   = isChapterComplete(ch.id);
+    const chLocked   = ch.id > 1 && !isBossComplete(ch.id - 1);
+    const chAllStars = isChapterComplete(ch.id);
+    const chDone     = isBossComplete(ch.id);
     const levelsHTML = LEVELS.filter(lv => lv.chapter === ch.id).map(lv => {
       const verbs    = VERBS.filter(v => v.level === lv.id);
       const unlocked = !chLocked && isLevelUnlocked(lv.id);
@@ -659,10 +663,31 @@ function renderHome() {
             <div class="chapter-name">${ch.name} — ${ch.subtitle}</div>
             <div class="chapter-desc">${ch.desc}</div>
           </div>
-          ${chLocked ? '<span class="chapter-lock">🔒 Terminer le chapitre précédent</span>' : ''}
+          ${chLocked ? '<span class="chapter-lock">🔒 Bats le boss du chapitre précédent</span>' : ''}
           ${chDone   ? '<span class="chapter-badge">✅ Complété !</span>' : ''}
         </div>
         <div class="levels-grid">${levelsHTML}</div>
+        ${(() => {
+          const bossDone      = isBossComplete(ch.id);
+          const bossAvailable = chAllStars && !chLocked;
+          const bossScore     = state.save.bossScore?.[ch.id];
+          return `
+            <div class="boss-card ${bossDone ? 'boss-done' : bossAvailable ? 'boss-available' : 'boss-locked'}"
+                 onclick="${bossAvailable || bossDone ? `startBoss(${ch.id})` : 'showBossLocked()'}">
+              <div class="boss-card-icon">👾</div>
+              <div class="boss-card-info">
+                <div class="boss-card-name">Boss – ${ch.name}</div>
+                <div class="boss-card-sub">
+                  ${bossDone
+                    ? `✅ Validé · ${bossScore?.correct ?? '?'}/${bossScore?.total ?? BOSS_QUESTIONS} · ${bossScore?.pct ?? '?'}%`
+                    : bossAvailable
+                    ? `Relève le défi final – ${BOSS_QUESTIONS} questions · ${BOSS_PASS_PCT}% pour valider`
+                    : `🔒 Obtiens 3⭐ sur tous les niveaux pour débloquer`}
+                </div>
+              </div>
+              <span class="boss-card-arrow">${bossDone ? '✅' : bossAvailable ? '→' : '🔒'}</span>
+            </div>`;
+        })()}
       </div>`;
   }).join('');
 
@@ -722,7 +747,10 @@ function renderHome() {
 }
 
 function showLocked() {
-  alert('🔒 Débloque ce niveau en progressant dans les niveaux précédents !\n\nÀ l\'intérieur d\'un chapitre : 2⭐ dans le niveau précédent.\nPour passer au chapitre suivant : 3⭐ sur tous les niveaux du chapitre actuel.');
+  alert('🔒 Débloque ce niveau en progressant !\n\nÀ l\'intérieur d\'un chapitre : 2⭐ dans le niveau précédent.\nPour passer au chapitre suivant : obtiens 3⭐ sur tous les niveaux, puis bats le niveau boss du chapitre.');
+}
+function showBossLocked() {
+  alert('🔒 Obtiens 3⭐ sur tous les niveaux du chapitre pour débloquer le boss !');
 }
 
 function selectLevel(levelId) {
@@ -814,6 +842,30 @@ function renderLevelMenu(levelId) {
   loadSprintLeaderboard(levelId);
 }
 
+function startBossSprint(chapterId) {
+  state.mode   = 'sprint';
+  state.sprint = {
+    isBoss: true, chapterId, levelId: null, _pool: [],
+    current: null,
+    answered: 0, correctCount: 0, streak: 0, maxStreak: 0, xpEarned: 0,
+    startTime: Date.now(), finished: false, answering: false, interval: null,
+    duration: BOSS_SPRINT_TIME,
+  };
+  state.sprint.current = _nextSprintQ();
+  state.sprint.interval = setInterval(() => {
+    const sp = state.sprint;
+    const remaining = Math.max(0, sp.duration - (Date.now() - sp.startTime) / 1000);
+    const el = document.getElementById('sprint-timer');
+    if (el) {
+      const s = Math.ceil(remaining);
+      el.textContent = `⏱ ${s}s`;
+      el.className = `sprint-timer${s <= 10 ? ' danger' : s <= 20 ? ' warning' : ''}`;
+    }
+    if (remaining <= 0 && !sp.finished) { clearInterval(sp.interval); showSprintResults(); }
+  }, 100);
+  renderSprint();
+}
+
 async function loadSprintLeaderboard(levelId, targetId) {
   const elId = targetId || `sprint-lb-${levelId}`;
   const el = document.getElementById(elId);
@@ -861,6 +913,60 @@ async function loadSprintLeaderboard(levelId, targetId) {
   } catch (e) {
     console.warn('Sprint leaderboard:', e);
   }
+}
+
+function startBoss(chapterId) {
+  const chapterVerbs = VERBS.filter(v => {
+    const lv = LEVELS.find(l => l.id === v.level);
+    return lv && lv.chapter === chapterId;
+  });
+  const allVerbs = VERBS;
+  const typeWeights = [
+    { type: Q_TYPES.TRANSL_FR_EN, w: 2 },
+    { type: Q_TYPES.TRANSL_EN_FR, w: 1 },
+    { type: Q_TYPES.V2_QCM,       w: 3 },
+    { type: Q_TYPES.V3_QCM,       w: 2 },
+    { type: Q_TYPES.TYPE_V2,      w: 2 },
+    { type: Q_TYPES.TYPE_V3,      w: 2 },
+  ];
+  const typePool = typeWeights.flatMap(t => Array(t.w).fill(t.type));
+  const questions = [];
+  const verbUsage = {};
+  for (let i = 0; i < BOSS_QUESTIONS; i++) {
+    const sorted = [...chapterVerbs].sort((a, b) =>
+      ((verbUsage[a.id] || 0) * 10 + getMastery(a.id)) - ((verbUsage[b.id] || 0) * 10 + getMastery(b.id))
+    );
+    const verb = sorted[Math.floor(Math.random() * Math.min(6, sorted.length))];
+    verbUsage[verb.id] = (verbUsage[verb.id] || 0) + 1;
+    const qtype = typePool[Math.floor(Math.random() * typePool.length)];
+    let q = { type: qtype, verb };
+    if (qtype === Q_TYPES.TRANSL_FR_EN) {
+      const { choices, correct } = buildChoices(verb, 'inf', allVerbs);
+      q = { ...q, choices, correct, question: 'Comment dit-on en anglais :', highlight: verb.fr };
+    } else if (qtype === Q_TYPES.TRANSL_EN_FR) {
+      const { choices, correct } = buildChoices(verb, 'fr', allVerbs);
+      q = { ...q, choices, correct, question: 'Que veut dire en français ?', highlight: verb.inf };
+    } else if (qtype === Q_TYPES.V2_QCM) {
+      const { choices, correct } = buildChoices(verb, 'v2', allVerbs);
+      q = { ...q, choices, correct, question: 'Quel est le prétérit de', highlight: verb.inf };
+    } else if (qtype === Q_TYPES.V3_QCM) {
+      const { choices, correct } = buildChoices(verb, 'v3', allVerbs);
+      q = { ...q, choices, correct, question: 'Quel est le participe passé de', highlight: verb.inf };
+    } else if (qtype === Q_TYPES.TYPE_V2) {
+      q = { ...q, correct: verb.v2, question: 'Écris le prétérit de', highlight: verb.inf };
+    } else if (qtype === Q_TYPES.TYPE_V3) {
+      q = { ...q, correct: verb.v3, question: 'Écris le participe passé de', highlight: verb.inf };
+    }
+    questions.push(q);
+  }
+  state.quiz = {
+    isBoss: true, chapterId, levelId: null,
+    questions, currentIndex: 0,
+    correctCount: 0, streak: 0, maxStreak: 0,
+    answered: false, xpEarned: 0,
+  };
+  state.mode = 'quiz';
+  renderQuizQuestion();
 }
 
 /* ══════════════════════════════════════════
@@ -1150,6 +1256,7 @@ function nextQuestion() {
    RESULTS
 ══════════════════════════════════════════ */
 function showResults() {
+  if (state.quiz.isBoss) { showBossResults(); return; }
   const quiz    = state.quiz;
   const total   = quiz.questions.length;
   const correct = quiz.correctCount;
@@ -1233,6 +1340,79 @@ function showResults() {
           <button class="btn btn-secondary" onclick="renderHome()">
             🏠 Accueil
           </button>
+        </div>
+      </div>
+    </div>`;
+}
+
+function showBossResults() {
+  const quiz      = state.quiz;
+  const chapterId = quiz.chapterId;
+  const total     = quiz.questions.length;
+  const correct   = quiz.correctCount;
+  const pct       = Math.round((correct / total) * 100);
+  const passed    = pct >= BOSS_PASS_PCT;
+
+  recordActivity(quiz.xpEarned);
+
+  if (!state.save.bossScore) state.save.bossScore = {};
+  const prev = state.save.bossScore[chapterId];
+  if (!prev || pct > (prev.pct || 0)) state.save.bossScore[chapterId] = { correct, total, pct };
+
+  const isFirstWin = passed && !isBossComplete(chapterId);
+  if (isFirstWin) {
+    if (!state.save.bossComplete) state.save.bossComplete = {};
+    state.save.bossComplete[chapterId] = true;
+    addXP(100);
+    quiz.xpEarned += 100;
+  }
+  saveState();
+  if (state.user) fbSave(state.user.uid, state.save);
+
+  const chapter     = CHAPTERS.find(c => c.id === chapterId);
+  const nextChapter = CHAPTERS.find(c => c.id === chapterId + 1);
+  const emoji = passed ? (pct === 100 ? '🏆' : '🎉') : pct >= 60 ? '💪' : '😅';
+  const title = passed ? 'Boss vaincu !' : 'Pas encore...';
+  const sub   = passed
+    ? `Tu maîtrises le ${chapter.name} !`
+    : `Il faut ${BOSS_PASS_PCT}% pour valider. Tu as ${pct}% – réessaie !`;
+
+  app().innerHTML = `
+    ${renderHeader('Boss – Résultats')}
+    <div class="screen-container">
+      <div class="results-card">
+        <div class="results-emoji">${emoji}</div>
+        <div class="results-title">${title}</div>
+        <div class="results-subtitle">${sub}</div>
+
+        <div class="boss-result-score">${correct}<span class="boss-result-total">/${total}</span></div>
+        <div class="results-score-label">${pct}% de réponses correctes · seuil ${BOSS_PASS_PCT}%</div>
+
+        ${passed && nextChapter ? `
+          <div class="unlock-banner">
+            <span class="unlock-icon">🔓</span>
+            <div>
+              <div>${nextChapter.name} débloqué !</div>
+              <div style="font-size:13px;font-weight:500;opacity:.9">${nextChapter.subtitle}</div>
+            </div>
+          </div>` : ''}
+
+        ${passed ? `
+          <div class="results-breakdown" style="margin-top:8px">
+            <div class="breakdown-row" style="font-weight:700;color:var(--purple)">
+              <span>🏅 Bonus XP boss</span><span>+100 XP</span>
+            </div>
+          </div>
+          <div class="boss-sprint-promo">
+            <p class="boss-sprint-promo-text">Solidifie ta mémoire avec le Sprint Boss !</p>
+            <button class="btn btn-primary" onclick="startBossSprint(${chapterId})">⚡ Sprint Boss (${BOSS_SPRINT_TIME}s)</button>
+          </div>` : ''}
+
+        <div class="results-btns">
+          <button class="btn ${passed ? 'btn-secondary' : 'btn-primary'}" onclick="startBoss(${chapterId})">
+            🔄 ${passed ? 'Rejouer' : 'Réessayer'}
+          </button>
+          <button class="btn btn-secondary" onclick="renderHome()">🏠 Accueil</button>
         </div>
       </div>
     </div>`;
@@ -1624,7 +1804,10 @@ function showFillBlankResults() {
 /* ══════════════════════════════════════════
    SPRINT MODE
 ══════════════════════════════════════════ */
-const SPRINT_TIME = 60; // secondes
+const SPRINT_TIME      = 60; // secondes
+const BOSS_QUESTIONS   = 20;
+const BOSS_PASS_PCT    = 80;
+const BOSS_SPRINT_TIME = 90;
 
 // XP par bonne réponse selon la série en cours
 function sprintXP(streak) {
@@ -1649,13 +1832,21 @@ function _genSprintQ(verb) {
 
 function _nextSprintQ() {
   const sp = state.sprint;
-  // Cycling pool: rebuilt when exhausted
   if (!sp._pool || sp._pool.length === 0) {
-    const levelVerbs  = VERBS.filter(v => v.level === sp.levelId);
-    const reviewVerbs = sp.levelId > 1
-      ? VERBS.filter(v => v.level < sp.levelId && getMastery(v.id) < 5).slice(0, 5)
-      : [];
-    sp._pool = shuffleArr([...levelVerbs, ...reviewVerbs]);
+    let verbs;
+    if (sp.isBoss) {
+      verbs = VERBS.filter(v => {
+        const lv = LEVELS.find(l => l.id === v.level);
+        return lv && lv.chapter === sp.chapterId;
+      });
+    } else {
+      const levelVerbs  = VERBS.filter(v => v.level === sp.levelId);
+      const reviewVerbs = sp.levelId > 1
+        ? VERBS.filter(v => v.level < sp.levelId && getMastery(v.id) < 5).slice(0, 5)
+        : [];
+      verbs = [...levelVerbs, ...reviewVerbs];
+    }
+    sp._pool = shuffleArr(verbs);
   }
   return _genSprintQ(sp._pool.shift());
 }
@@ -1668,11 +1859,12 @@ function startSprint(levelId) {
     current: null,
     answered: 0, correctCount: 0, streak: 0, maxStreak: 0, xpEarned: 0,
     startTime: Date.now(), finished: false, answering: false, interval: null,
+    duration: SPRINT_TIME,
   };
   state.sprint.current = _nextSprintQ();
 
   state.sprint.interval = setInterval(() => {
-    const remaining = Math.max(0, SPRINT_TIME - (Date.now() - state.sprint.startTime) / 1000);
+    const remaining = Math.max(0, state.sprint.duration - (Date.now() - state.sprint.startTime) / 1000);
     const el = document.getElementById('sprint-timer');
     if (el) {
       const s = Math.ceil(remaining);
@@ -1692,7 +1884,7 @@ function renderSprint() {
   const sp = state.sprint;
   if (sp.finished) return;
   const q       = sp.current;
-  const s       = Math.ceil(Math.max(0, SPRINT_TIME - (Date.now() - sp.startTime) / 1000));
+  const s       = Math.ceil(Math.max(0, sp.duration - (Date.now() - sp.startTime) / 1000));
   const letters = ['A', 'B', 'C', 'D'];
   const streakHTML = sp.streak >= 2 ? `<span class="streak-badge">🔥 ${sp.streak}</span>` : '';
   const xpNext  = sprintXP(sp.streak + 1);
@@ -1704,7 +1896,7 @@ function renderSprint() {
 
       <div class="quiz-header">
         <div class="quiz-progress-bar">
-          <div class="quiz-progress-fill sprint-progress" style="width:${(s / SPRINT_TIME) * 100}%"></div>
+          <div class="quiz-progress-fill sprint-progress" style="width:${(s / sp.duration) * 100}%"></div>
         </div>
         <div class="quiz-meta">
           <span class="quiz-score-live">✅ ${sp.correctCount} ${streakHTML}</span>
@@ -1782,11 +1974,13 @@ function showSprintResults() {
   clearInterval(sp.interval);
   state.mode = null;
 
-  if (!state.save.sprintBest) state.save.sprintBest = {};
-  const _prevBest    = state.save.sprintBest[sp.levelId] || { score: 0, streak: 0 };
+  const _bestKey  = sp.isBoss ? 'bossSprintBest' : 'sprintBest';
+  const _bestId   = sp.isBoss ? sp.chapterId : sp.levelId;
+  if (!state.save[_bestKey]) state.save[_bestKey] = {};
+  const _prevBest    = state.save[_bestKey][_bestId] || { score: 0, streak: 0, xp: 0 };
   const _isNewRecord = sp.correctCount > _prevBest.score;
-  const _combo20     = sp.maxStreak >= 30;
-  sp.xpEarned = _isNewRecord ? sp.correctCount * (_combo20 ? 2 : 1) : 0;
+  const _combo30     = sp.maxStreak >= 30;
+  sp.xpEarned = _isNewRecord ? sp.correctCount * (_combo30 ? 2 : 1) : 0;
   recordActivity(sp.xpEarned);
 
   const _newBest = {
@@ -1795,7 +1989,7 @@ function showSprintResults() {
     xp:     _isNewRecord ? sp.xpEarned : (_prevBest.xp || 0),
   };
   if (_newBest.score !== _prevBest.score || _newBest.streak !== _prevBest.streak || _newBest.xp !== (_prevBest.xp || 0)) {
-    state.save.sprintBest[sp.levelId] = _newBest;
+    state.save[_bestKey][_bestId] = _newBest;
     saveState();
     if (state.user) fbSave(state.user.uid, state.save);
   }
@@ -1812,7 +2006,7 @@ function showSprintResults() {
         <div class="results-emoji">${emoji}</div>
         <div class="results-title">${title}</div>
         <div class="sprint-result-big">${correct}</div>
-        <div class="results-score-label">bonnes réponses en ${SPRINT_TIME}s</div>
+        <div class="results-score-label">bonnes réponses en ${sp.duration}s</div>
 
         <div class="results-breakdown">
           <div class="breakdown-row">
@@ -1836,27 +2030,30 @@ function showSprintResults() {
         <div class="results-breakdown" style="margin-top:8px">
           ${_isNewRecord
             ? `<div class="breakdown-row" style="font-weight:700;color:var(--purple)">
-                <span>🏅 Nouveau record !</span><span>+${sp.xpEarned} XP${_combo20 ? ' <span class="sprint-x2-badge">×2</span>' : ''}</span>
+                <span>🏅 Nouveau record !</span><span>+${sp.xpEarned} XP${_combo30 ? ' <span class="sprint-x2-badge">×2</span>' : ''}</span>
                </div>
-               ${_combo20 ? `<div class="breakdown-row" style="font-size:12px;color:#e17055;font-weight:600"><span>🔥 Combo 30+ débloqué – XP doublé !</span></div>` : ''}`
+               ${_combo30 ? `<div class="breakdown-row" style="font-size:12px;color:#e17055;font-weight:600"><span>🔥 Combo 30+ débloqué – XP doublé !</span></div>` : ''}`
             : `<div class="breakdown-row" style="font-size:13px;color:var(--muted)">
                 <span>Pas de nouveau record – 0 XP</span><span>Record : ${_prevBest.score} bonnes</span>
                </div>`}
           <div class="breakdown-row" style="font-size:12px;color:var(--muted)">
-            <span>XP = bonnes réponses si record · ×2 si combo 20+</span>
+            <span>XP = bonnes réponses si record · ×2 si combo 30+</span>
           </div>
         </div>
 
         <div id="sprint-lb-results" class="sprint-lb-wrap" style="margin-top:12px"></div>
 
         <div class="results-btns">
-          <button class="btn btn-primary" onclick="startSprint(${sp.levelId})">🔄 Rejouer</button>
-          <button class="btn btn-secondary" onclick="renderLevelMenu(${sp.levelId})">← Niveau ${sp.levelId}</button>
+          ${sp.isBoss
+            ? `<button class="btn btn-primary" onclick="startBossSprint(${sp.chapterId})">🔄 Rejouer</button>
+               <button class="btn btn-secondary" onclick="startBoss(${sp.chapterId})">← Boss</button>`
+            : `<button class="btn btn-primary" onclick="startSprint(${sp.levelId})">🔄 Rejouer</button>
+               <button class="btn btn-secondary" onclick="renderLevelMenu(${sp.levelId})">← Niveau ${sp.levelId}</button>`}
           <button class="btn btn-secondary" onclick="renderHome()">🏠 Accueil</button>
         </div>
       </div>
     </div>`;
-  loadSprintLeaderboard(sp.levelId, 'sprint-lb-results');
+  if (!sp.isBoss) loadSprintLeaderboard(sp.levelId, 'sprint-lb-results');
 }
 
 /* ══════════════════════════════════════════
@@ -2080,8 +2277,8 @@ function renderStatsScreen() {
 
   // Progression par chapitre + niveau
   const chaptersHTML = CHAPTERS.map(ch => {
-    const chLocked = ch.id > 1 && !isChapterComplete(ch.id - 1);
-    const chDone   = isChapterComplete(ch.id);
+    const chLocked = ch.id > 1 && !isBossComplete(ch.id - 1);
+    const chDone   = isBossComplete(ch.id);
     const chVerbs  = VERBS.filter(v => {
       const lv = LEVELS.find(l => l.id === v.level);
       return lv && lv.chapter === ch.id;
@@ -2637,6 +2834,22 @@ function mergeRemoteState(remote) {
       score:  Math.max(cur.score,  v.score  || 0),
       streak: Math.max(cur.streak, v.streak || 0),
       xp:     Math.max(cur.xp || 0, v.xp   || 0),
+    };
+  });
+  if (!state.save.bossComplete) state.save.bossComplete = {};
+  Object.entries(remote.bossComplete || {}).forEach(([k, v]) => { if (v) state.save.bossComplete[k] = true; });
+  if (!state.save.bossScore) state.save.bossScore = {};
+  Object.entries(remote.bossScore || {}).forEach(([k, v]) => {
+    const cur = state.save.bossScore[k];
+    if (!cur || (v.pct || 0) > (cur.pct || 0)) state.save.bossScore[k] = v;
+  });
+  if (!state.save.bossSprintBest) state.save.bossSprintBest = {};
+  Object.entries(remote.bossSprintBest || {}).forEach(([k, v]) => {
+    const cur = state.save.bossSprintBest[k] || { score: 0, streak: 0, xp: 0 };
+    state.save.bossSprintBest[k] = {
+      score:  Math.max(cur.score,  v.score  || 0),
+      streak: Math.max(cur.streak, v.streak || 0),
+      xp:     Math.max(cur.xp  || 0, v.xp  || 0),
     };
   });
   saveState();

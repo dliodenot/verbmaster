@@ -1358,6 +1358,36 @@ body {
 .sprint-lb-streak { font-weight: 700; color: #e17055;     flex-shrink: 0; }
 .sprint-lb-mypos  { margin-top: 6px; padding-top: 6px; border-top: 1px solid #e2e8f0; font-size: 12px; color: var(--muted); font-style: italic; }
 
+/* ── Boss ── */
+.boss-card {
+  display: flex; align-items: center; gap: 12px;
+  background: linear-gradient(135deg, #6c5ce722, #a29bfe22);
+  border: 2px solid #6c5ce7; border-radius: 16px;
+  padding: 14px 16px; margin-top: 12px; cursor: pointer;
+  transition: transform .15s, box-shadow .15s;
+}
+.boss-card:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(108,92,231,.25); }
+.boss-card.boss-locked { opacity: .55; border-color: #b2bec3; background: #f1f3f4; cursor: default; }
+.boss-card.boss-done { border-color: var(--green); background: linear-gradient(135deg, #00b89422, #55efc422); }
+.boss-card-icon { font-size: 28px; flex-shrink: 0; }
+.boss-card-info { flex: 1; min-width: 0; }
+.boss-card-name { font-size: 15px; font-weight: 800; color: var(--dark); }
+.boss-card.boss-done .boss-card-name { color: var(--green); }
+.boss-card-sub { font-size: 12px; color: var(--muted); margin-top: 2px; }
+.boss-card-arrow { font-size: 18px; font-weight: 700; color: var(--purple); flex-shrink: 0; }
+
+.boss-result-score {
+  font-size: 60px; font-weight: 900; color: var(--purple);
+  line-height: 1; margin: 12px 0 4px;
+}
+.boss-result-total { font-size: 28px; font-weight: 600; color: var(--muted); }
+.boss-sprint-promo {
+  margin: 16px 0 8px; padding: 14px; border-radius: 14px;
+  background: linear-gradient(135deg, #fdcb6e22, #e1705522);
+  border: 1.5px dashed #e17055; text-align: center;
+}
+.boss-sprint-promo-text { font-size: 13px; color: var(--muted); margin-bottom: 10px; }
+
 /* Responsiveness */
 @media (max-width: 480px) {
   .choices { grid-template-columns: 1fr; }
