@@ -829,16 +829,16 @@ async function loadSprintLeaderboard(levelId, targetId) {
     );
 
     const myBest = state.save.sprintBest?.[levelId] || { score: 0, streak: 0, xp: 0 };
+    const _xp = b => b?.xp || b?.score || 0; // fallback sur score pour les anciens records sans xp
     const entries = [
       { name: state.user.name || 'Moi', photo: state.user.photo, isMe: true,
-        score: myBest.score, streak: myBest.streak, xp: myBest.xp || 0 },
-      ...friendDocs.filter(Boolean).map(fd => ({
-        name: fd.displayName || 'Ami', photo: fd.photoURL, isMe: false,
-        score:  fd.sprintBest?.[levelId]?.score  || 0,
-        streak: fd.sprintBest?.[levelId]?.streak || 0,
-        xp:     fd.sprintBest?.[levelId]?.xp     || 0,
-      })),
-    ].filter(e => e.xp > 0 || e.score > 0).sort((a, b) => b.xp - a.xp || b.score - a.score);
+        score: myBest.score, streak: myBest.streak, xp: _xp(myBest) },
+      ...friendDocs.filter(Boolean).map(fd => {
+        const b = fd.sprintBest?.[levelId];
+        return { name: fd.displayName || 'Ami', photo: fd.photoURL, isMe: false,
+          score: b?.score || 0, streak: b?.streak || 0, xp: _xp(b) };
+      }),
+    ].filter(e => e.score > 0).sort((a, b) => b.xp - a.xp || b.score - a.score);
 
     if (!document.getElementById(elId)) return;
     if (entries.length === 0) return;
